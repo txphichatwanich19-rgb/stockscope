@@ -263,6 +263,8 @@ st.markdown(
     .level-tile.stop .price     { color: #991b1b; }
     .level-tile.target    { border-color: #dbeafe; }
     .level-tile.target .price   { color: #1e40af; }
+    .level-tile.resistance { border-color: #fecaca; }
+    .level-tile.resistance .price { color: #b91c1c; }
     .level-tile.current   { background: #fafafa; }
     .level-tile.current .price  { color: #18181b; }
 
@@ -1022,42 +1024,50 @@ with tab_signal:
     support = levels["support"]
     resistance = levels["resistance"]
 
-    st.markdown('<div class="section-h">ราคาเข้า / ออก (Support & Resistance)</div>', unsafe_allow_html=True)
-
-    nearest_sup = support[0] if support else None
-    next_sup = support[1] if len(support) > 1 else None
-    nearest_res = resistance[0] if resistance else None
-    next_res = resistance[1] if len(resistance) > 1 else None
+    buy1 = support[0] if len(support) >= 1 else None
+    buy2 = support[1] if len(support) >= 2 else None
+    sell1 = resistance[0] if len(resistance) >= 1 else None
+    sell2 = resistance[1] if len(resistance) >= 2 else None
+    sell3 = resistance[2] if len(resistance) >= 3 else None
+    stop_loss = buy2 * 0.98 if buy2 else (buy1 * 0.96 if buy1 else None)
 
     def level_tile(cls: str, role: str, price: float | None, sub: str = "") -> str:
         if price is None:
-            return f'<div class="level-tile {cls}"><div class="role">{role}</div><div class="price">—</div><div class="delta">ข้อมูลไม่พอ</div></div>'
+            return (
+                f'<div class="level-tile {cls}"><div class="role">{role}</div>'
+                f'<div class="price">—</div><div class="delta">ข้อมูลไม่พอ</div></div>'
+            )
         delta_pct = (price / current - 1) * 100
-        delta_str = f"{delta_pct:+.2f}% จากราคาปัจจุบัน" if not sub else sub
+        delta_str = f"{delta_pct:+.2f}% · {sub}" if sub else f"{delta_pct:+.2f}% จากราคาปัจจุบัน"
         return (
             f'<div class="level-tile {cls}"><div class="role">{role}</div>'
             f'<div class="price">{price:,.2f}</div><div class="delta">{delta_str}</div></div>'
         )
 
-    stop_loss = nearest_sup * 0.98 if nearest_sup else None
+    st.markdown('<div class="section-h">🟢 แนวรับ — โซนซื้อ</div>', unsafe_allow_html=True)
+    r1 = st.columns(4)
+    r1[0].markdown(level_tile("current", "ราคาปัจจุบัน", current, "ตอนนี้"), unsafe_allow_html=True)
+    r1[1].markdown(level_tile("entry", "🟢 Buy Zone 1", buy1, "แนวรับ S1 · ใกล้สุด"), unsafe_allow_html=True)
+    r1[2].markdown(level_tile("entry", "🟢 Buy Zone 2", buy2, "แนวรับ S2 · ถัดลงไป"), unsafe_allow_html=True)
+    r1[3].markdown(level_tile("stop", "🛑 Stop Loss", stop_loss, "~2% ใต้ S2" if buy2 else "~4% ใต้ S1"), unsafe_allow_html=True)
 
-    c1, c2, c3, c4, c5 = st.columns(5)
-    c1.markdown(level_tile("current", "ราคาปัจจุบัน", current, "—"), unsafe_allow_html=True)
-    c2.markdown(level_tile("entry", "🟢 Buy Zone", nearest_sup, f"แนวรับ S1" if nearest_sup else ""), unsafe_allow_html=True)
-    c3.markdown(level_tile("stop", "🛑 Stop Loss", stop_loss, f"~2% ใต้ S1" if stop_loss else ""), unsafe_allow_html=True)
-    c4.markdown(level_tile("target", "🎯 Target 1", nearest_res, f"แนวต้าน R1" if nearest_res else ""), unsafe_allow_html=True)
-    c5.markdown(level_tile("target", "🎯 Target 2", next_res, f"แนวต้าน R2" if next_res else ""), unsafe_allow_html=True)
+    st.write("")
+    st.markdown('<div class="section-h">🔴 แนวต้าน — โซนขาย / Take Profit</div>', unsafe_allow_html=True)
+    r2 = st.columns(3)
+    r2[0].markdown(level_tile("resistance", "🎯 Sell Zone 1", sell1, "แนวต้าน R1 · ใกล้สุด"), unsafe_allow_html=True)
+    r2[1].markdown(level_tile("resistance", "🎯 Sell Zone 2", sell2, "แนวต้าน R2"), unsafe_allow_html=True)
+    r2[2].markdown(level_tile("resistance", "🎯 Sell Zone 3", sell3, "แนวต้าน R3 · ไกลสุด"), unsafe_allow_html=True)
 
     # Risk/Reward
-    if nearest_sup and stop_loss and nearest_res:
+    if buy1 and stop_loss and sell1:
         risk = current - stop_loss
-        reward = nearest_res - current
+        reward = sell1 - current
         if risk > 0:
             rr = reward / risk
             rr_color = "#166534" if rr >= 2 else ("#a16207" if rr >= 1 else "#991b1b")
             st.markdown(
-                f'<div style="margin-top:0.5rem;">'
-                f'<span class="rr-badge">Risk/Reward (ซื้อราคานี้ → T1) · '
+                f'<div style="margin-top:0.75rem;">'
+                f'<span class="rr-badge">Risk/Reward (ซื้อราคานี้ → Sell 1) · '
                 f'<b style="color:{rr_color};">{rr:.2f} : 1</b></span>'
                 f'</div>',
                 unsafe_allow_html=True,
