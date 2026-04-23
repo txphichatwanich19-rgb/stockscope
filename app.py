@@ -911,20 +911,77 @@ with tab_chart:
         fig.add_trace(go.Scatter(x=df.index, y=mid, name="BB Mid", line=dict(width=1, dash="dot", color="rgba(113,113,122,0.7)")), row=1, col=1)
 
     levels = compute_levels(df)
-    for i, r in enumerate(levels["resistance"], 1):
+    _support = levels["support"]
+    _resistance = levels["resistance"]
+    _current = levels["current"]
+
+    # Resistance lines (Sell zones) — red, solid/dashed/dotted by proximity
+    _res_styles = [
+        ("solid",  2.0, "🔴 ขาย 1 (R1)"),
+        ("dash",   1.6, "🔴 ขาย 2 (R2)"),
+        ("dot",    1.3, "🔴 ขาย 3 (R3)"),
+    ]
+    for i, r in enumerate(_resistance):
+        if i >= len(_res_styles):
+            break
+        style, width, label = _res_styles[i]
         fig.add_hline(
-            y=r, line_dash="dot", line_color="#dc2626", line_width=1, opacity=0.55,
-            annotation_text=f"  R{i} · {r:,.2f}", annotation_position="right",
-            annotation_font=dict(color="#dc2626", size=11, family="JetBrains Mono"),
+            y=r, line_dash=style, line_color="#dc2626", line_width=width, opacity=0.95,
+            annotation_text=f" {label} · {r:,.2f} ",
+            annotation_position="top left",
+            annotation_font=dict(color="#ffffff", size=11, family="Inter"),
+            annotation_bgcolor="#dc2626",
+            annotation_bordercolor="#dc2626",
             row=1, col=1,
         )
-    for i, s in enumerate(levels["support"], 1):
+
+    # Support lines (Buy zones) — green, solid/dashed/dotted
+    _sup_styles = [
+        ("solid",  2.0, "🟢 ซื้อ 1 (S1)"),
+        ("dash",   1.6, "🟢 ซื้อ 2 (S2)"),
+        ("dot",    1.3, "🟢 ซื้อ 3 (S3)"),
+    ]
+    for i, s in enumerate(_support):
+        if i >= len(_sup_styles):
+            break
+        style, width, label = _sup_styles[i]
         fig.add_hline(
-            y=s, line_dash="dot", line_color="#16a34a", line_width=1, opacity=0.55,
-            annotation_text=f"  S{i} · {s:,.2f}", annotation_position="right",
-            annotation_font=dict(color="#16a34a", size=11, family="JetBrains Mono"),
+            y=s, line_dash=style, line_color="#15803d", line_width=width, opacity=0.95,
+            annotation_text=f" {label} · {s:,.2f} ",
+            annotation_position="bottom left",
+            annotation_font=dict(color="#ffffff", size=11, family="Inter"),
+            annotation_bgcolor="#15803d",
+            annotation_bordercolor="#15803d",
             row=1, col=1,
         )
+
+    # Stop Loss line — orange, dashed
+    _stop = None
+    if len(_support) >= 2:
+        _stop = _support[1] * 0.98
+    elif len(_support) == 1:
+        _stop = _support[0] * 0.96
+    if _stop is not None:
+        fig.add_hline(
+            y=_stop, line_dash="longdashdot", line_color="#ea580c", line_width=1.8, opacity=0.95,
+            annotation_text=f" 🛑 Stop Loss · {_stop:,.2f} ",
+            annotation_position="bottom left",
+            annotation_font=dict(color="#ffffff", size=11, family="Inter"),
+            annotation_bgcolor="#ea580c",
+            annotation_bordercolor="#ea580c",
+            row=1, col=1,
+        )
+
+    # Current price line — subtle gray
+    fig.add_hline(
+        y=_current, line_dash="dot", line_color="#52525b", line_width=1, opacity=0.6,
+        annotation_text=f" ราคาปัจจุบัน · {_current:,.2f} ",
+        annotation_position="top right",
+        annotation_font=dict(color="#ffffff", size=11, family="Inter"),
+        annotation_bgcolor="#52525b",
+        annotation_bordercolor="#52525b",
+        row=1, col=1,
+    )
 
     r = 2
     if show_volume and "Volume" in df:
