@@ -560,35 +560,26 @@ def build_signal(df: pd.DataFrame) -> tuple[str, list[str]]:
 # ---------- UI ----------
 PICKS: dict[str, dict] = {
     "🌱 หุ้นเล็กน่าเติบโต": {
-        "desc": "Small-mid cap growth · ขนาดกลาง-เล็ก ยังมีพื้นที่โต",
-        "mode": "curated",
-        "tickers": {
-            "IONQ":  "Quantum computing pure-play",
-            "RKLB":  "จรวดเล็กคู่แข่ง SpaceX · launch ถี่ขึ้น",
-            "ACHR":  "Air taxi eVTOL · รอ FAA certification",
-            "JOBY":  "eVTOL คู่แข่ง ACHR · หนุนโดย Toyota",
-            "SOUN":  "Voice AI สำหรับ car / restaurant",
-            "HIMS":  "Telehealth + GLP-1 branded",
-            "SOFI":  "Digital bank + fintech platform",
-            "RIOT":  "Bitcoin mining · hash rate top-tier",
-        },
+        "desc": "Small-mid cap growth · สแกนสดจาก universe 25 ตัว · เรียงตาม momentum 1 เดือน (RSI<75, เหนือ SMA50)",
+        "mode": "auto_small_growth",
+        "universe": [
+            "IONQ", "RKLB", "ACHR", "JOBY", "SOUN", "HIMS", "SOFI", "RIOT",
+            "MARA", "CLSK", "CIFR", "IREN", "BBAI", "LMND", "UPST", "AFRM",
+            "PATH", "OPEN", "DKNG", "FUBO", "CHPT", "SERV", "NBIS", "CRCT",
+            "TEM",
+        ],
     },
     "🚀 หุ้นอนาคตไกล": {
-        "desc": "Megatrend · AI, cloud, semi, biotech · leader รายใหญ่",
-        "mode": "curated",
-        "tickers": {
-            "NVDA":  "AI GPU monopoly · data-center demand ยังแรง",
-            "MSFT":  "Cloud Azure + OpenAI + Copilot ทุก product",
-            "GOOGL": "Search + Gemini + YouTube + Cloud",
-            "AMZN":  "AWS + retail + ads · cash flow มหาศาล",
-            "META":  "AI LLaMA + ads scale + Reality Labs",
-            "TSM":   "Semiconductor foundry · ผลิตให้ทุกราย",
-            "ASML":  "EUV lithography · ไม่มีคู่แข่ง",
-            "LLY":   "GLP-1 / diabetes / Alzheimer · pipeline แน่น",
-        },
+        "desc": "Megatrend leaders · สแกนสดจาก universe 25 ตัว · เรียงตาม performance 3 เดือน",
+        "mode": "auto_future",
+        "universe": [
+            "NVDA", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "TSM", "ASML",
+            "AVGO", "AMD", "QCOM", "LLY", "NVO", "UNH", "V", "MA",
+            "NOW", "CRM", "ADBE", "ORCL", "PANW", "NFLX", "ARM", "COST", "JPM",
+        ],
     },
     "🚦 หุ้นซิ่ง": {
-        "desc": "Momentum · เรียงตามการเปลี่ยนแปลงราคา 1 สัปดาห์ล่าสุด",
+        "desc": "Momentum · สแกนสด · เรียงตาม % 1 สัปดาห์ล่าสุด",
         "mode": "momentum",
         "tickers": [
             "NVDA", "TSLA", "AMD", "PLTR", "MSTR", "COIN", "MARA",
@@ -597,7 +588,7 @@ PICKS: dict[str, dict] = {
         ],
     },
     "⚠️ ห้ามไปยุ่งตอนนี้": {
-        "desc": "ตัวที่มีสัญญาณเตือน · RSI > 75 (ร้อนเกิน) หรือราคาทะลุ SMA ลง",
+        "desc": "สแกนสด · ตัวที่ RSI > 75 (ร้อนเกิน) หรือราคาทะลุ SMA ลง",
         "mode": "avoid",
         "tickers": [
             "NVDA", "TSLA", "AAPL", "MSFT", "GOOGL", "AMZN", "META",
@@ -606,18 +597,13 @@ PICKS: dict[str, dict] = {
         ],
     },
     "🎰 Option Plays (Call / Put)": {
-        "desc": "หุ้น option liquid สูง · โน้มเอียง bullish → ซื้อ Call, bearish → ซื้อ Put",
-        "mode": "options",
-        "tickers": {
-            "SPY":  "S&P 500 ETF · spread แคบสุด",
-            "QQQ":  "Nasdaq 100 ETF",
-            "TSLA": "IV สูง · premium รวย",
-            "NVDA": "AI / earnings play",
-            "AAPL": "Weekly liquid · IV ต่ำ premium ถูก",
-            "AMZN": "Earnings play",
-            "META": "Earnings play",
-            "AMD":  "Trend / volatility play",
-        },
+        "desc": "หุ้น option liquid · สแกนสด · เรียงตาม volatility ล่าสุด (abs 1W %) · bias จากสัญญาณเทคนิค",
+        "mode": "auto_options",
+        "universe": [
+            "SPY", "QQQ", "IWM", "DIA", "TSLA", "NVDA", "AAPL", "AMZN",
+            "META", "MSFT", "GOOGL", "AMD", "NFLX", "BA", "COIN", "MSTR",
+            "PLTR", "SMCI",
+        ],
     },
 }
 
@@ -696,35 +682,58 @@ with st.sidebar:
     elif category in PICKS:
         cfg = PICKS[category]
         mode = cfg["mode"]
-        tks = cfg["tickers"]
         st.caption(cfg["desc"])
-        if mode in ("curated", "options"):
-            tickers_in_cat = [(s, th, None) for s, th in tks.items()]
-            show_meta = False
-        else:
-            # momentum / avoid need live data
-            with st.spinner("กำลังคำนวณ…"):
-                mini = load_mini_batch(tuple(tks))
-            if mode == "momentum":
-                ranked = sorted([t for t in tks if t in mini],
-                                key=lambda t: mini[t]["w1"], reverse=True)[:8]
-                tickers_in_cat = [(t, f"1W {mini[t]['w1']:+.1f}% · RSI {mini[t]['rsi']:.0f}", None) for t in ranked]
-                show_meta = True
-            else:  # avoid
-                flagged = []
-                for t in tks:
-                    d = mini.get(t)
-                    if not d:
-                        continue
-                    if d["rsi"] > 75:
-                        flagged.append((t, f"RSI {d['rsi']:.0f} · ร้อนเกิน", d["rsi"]))
-                    elif d["below_sma20"] and d["below_sma50"]:
-                        flagged.append((t, "ใต้ SMA20 & 50 · trend พัง", d["rsi"]))
-                flagged.sort(key=lambda x: x[2], reverse=True)
-                tickers_in_cat = [(t, r, None) for t, r, _ in flagged[:8]]
-                show_meta = True
-                if not tickers_in_cat:
-                    st.info("ยังไม่มีตัวติดสัญญาณเตือน")
+
+        universe = cfg.get("universe") or cfg.get("tickers") or []
+        if isinstance(universe, dict):
+            universe = list(universe.keys())
+
+        with st.spinner("กำลังสแกน…"):
+            mini = load_mini_batch(tuple(universe))
+
+        tickers_in_cat = []
+        if mode == "momentum":
+            ranked = sorted([t for t in universe if t in mini],
+                            key=lambda t: mini[t]["w1"], reverse=True)[:8]
+            tickers_in_cat = [(t, f"1W {mini[t]['w1']:+.1f}% · RSI {mini[t]['rsi']:.0f}", None) for t in ranked]
+        elif mode == "avoid":
+            flagged = []
+            for t in universe:
+                d = mini.get(t)
+                if not d:
+                    continue
+                if d["rsi"] > 75:
+                    flagged.append((t, f"RSI {d['rsi']:.0f} · ร้อนเกิน", d["rsi"]))
+                elif d["below_sma20"] and d["below_sma50"]:
+                    flagged.append((t, "ใต้ SMA20 & 50 · trend พัง", d["rsi"]))
+            flagged.sort(key=lambda x: x[2], reverse=True)
+            tickers_in_cat = [(t, r, None) for t, r, _ in flagged[:8]]
+            if not tickers_in_cat:
+                st.info("ยังไม่มีตัวติดสัญญาณเตือน")
+        elif mode == "auto_small_growth":
+            candidates = [
+                (t, d) for t, d in mini.items()
+                if d["rsi"] < 75 and not (d["below_sma20"] and d["below_sma50"])
+            ]
+            candidates.sort(key=lambda x: x[1]["m1"], reverse=True)
+            tickers_in_cat = [
+                (t, f"1M {d['m1']:+.1f}% · RSI {d['rsi']:.0f}", None)
+                for t, d in candidates[:8]
+            ]
+        elif mode == "auto_future":
+            candidates = sorted(mini.items(), key=lambda x: x[1]["m3"], reverse=True)
+            tickers_in_cat = [
+                (t, f"3M {d['m3']:+.1f}% · 1M {d['m1']:+.1f}%", None)
+                for t, d in candidates[:8]
+            ]
+        elif mode == "auto_options":
+            def _bias(sig: str) -> str:
+                return {"bull": "📈 Call bias", "bear": "📉 Put bias", "flat": "⚪ Neutral"}[sig]
+            candidates = sorted(mini.items(), key=lambda x: abs(x[1]["w1"]), reverse=True)
+            tickers_in_cat = [
+                (t, f"σ {abs(d['w1']):.1f}% · {_bias(d['sig'])}", None)
+                for t, d in candidates[:8]
+            ]
     else:
         tickers_in_cat = []
         show_meta = False
