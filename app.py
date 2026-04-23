@@ -236,6 +236,48 @@ st.markdown(
         padding-top: 0.4rem; border-top: 1px dashed #e4e4e7;
     }
 
+    /* Level tile */
+    .level-tile {
+        background: #ffffff;
+        border: 1px solid #e4e4e7;
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+        height: 100%;
+    }
+    .level-tile .role {
+        font-size: 0.7rem; font-weight: 600;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        color: #71717a;
+    }
+    .level-tile .price {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.2rem; font-weight: 700;
+        margin-top: 0.3rem; letter-spacing: -0.01em;
+    }
+    .level-tile .delta {
+        font-size: 0.76rem; margin-top: 0.2rem; color: #71717a;
+    }
+    .level-tile.entry     { border-color: #d1fae5; }
+    .level-tile.entry .price    { color: #166534; }
+    .level-tile.stop      { border-color: #fee2e2; }
+    .level-tile.stop .price     { color: #991b1b; }
+    .level-tile.target    { border-color: #dbeafe; }
+    .level-tile.target .price   { color: #1e40af; }
+    .level-tile.current   { background: #fafafa; }
+    .level-tile.current .price  { color: #18181b; }
+
+    .rr-badge {
+        display: inline-block;
+        background: #f4f4f5;
+        border: 1px solid #e4e4e7;
+        border-radius: 999px;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.82rem;
+        color: #3f3f46;
+        font-weight: 500;
+    }
+    .rr-badge b { color: #18181b; font-weight: 700; }
+
     .pick-intro {
         color: #52525b; font-size: 0.9rem; margin-bottom: 0.75rem;
     }
@@ -294,6 +336,41 @@ def bollinger(series: pd.Series, window: int = 20, n_std: float = 2.0):
     mid = sma(series, window)
     std = series.rolling(window=window, min_periods=1).std()
     return mid + n_std * std, mid, mid - n_std * std
+
+
+def compute_levels(df: pd.DataFrame, max_each: int = 3) -> dict:
+    """Find support/resistance from local pivot highs/lows, cluster within 1.5%."""
+    if len(df) < 20:
+        return {"support": [], "resistance": [], "current": float(df["Close"].iloc[-1]) if len(df) else 0}
+    highs = df["High"].values
+    lows = df["Low"].values
+    n = len(df)
+    window = max(3, min(10, n // 40))
+    res_piv, sup_piv = [], []
+    for i in range(window, n - window):
+        if all(highs[i] >= highs[i - k] and highs[i] >= highs[i + k] for k in range(1, window + 1)):
+            res_piv.append(float(highs[i]))
+        if all(lows[i] <= lows[i - k] and lows[i] <= lows[i + k] for k in range(1, window + 1)):
+            sup_piv.append(float(lows[i]))
+
+    def cluster(levels: list[float], tol: float = 0.015) -> list[float]:
+        if not levels:
+            return []
+        levels = sorted(levels)
+        groups = [[levels[0]]]
+        for lvl in levels[1:]:
+            if (lvl - groups[-1][-1]) / max(groups[-1][-1], 1e-9) < tol:
+                groups[-1].append(lvl)
+            else:
+                groups.append([lvl])
+        return [sum(g) / len(g) for g in groups]
+
+    res_clust = cluster(res_piv)
+    sup_clust = cluster(sup_piv)
+    current = float(df["Close"].iloc[-1])
+    resistance = sorted([x for x in res_clust if x > current * 1.002])[:max_each]
+    support = sorted([x for x in sup_clust if x < current * 0.998], reverse=True)[:max_each]
+    return {"support": support, "resistance": resistance, "current": current}
 
 
 # ---------- Data fetch (cached) ----------
@@ -770,6 +847,22 @@ with tab_chart:
         fig.add_trace(go.Scatter(x=df.index, y=lower, name="BB Lower", line=dict(width=1, color="rgba(113,113,122,0.5)"), fill="tonexty", fillcolor="rgba(113,113,122,0.06)"), row=1, col=1)
         fig.add_trace(go.Scatter(x=df.index, y=mid, name="BB Mid", line=dict(width=1, dash="dot", color="rgba(113,113,122,0.7)")), row=1, col=1)
 
+    levels = compute_levels(df)
+    for i, r in enumerate(levels["resistance"], 1):
+        fig.add_hline(
+            y=r, line_dash="dot", line_color="#dc2626", line_width=1, opacity=0.55,
+            annotation_text=f"  R{i} · {r:,.2f}", annotation_position="right",
+            annotation_font=dict(color="#dc2626", size=11, family="JetBrains Mono"),
+            row=1, col=1,
+        )
+    for i, s in enumerate(levels["support"], 1):
+        fig.add_hline(
+            y=s, line_dash="dot", line_color="#16a34a", line_width=1, opacity=0.55,
+            annotation_text=f"  S{i} · {s:,.2f}", annotation_position="right",
+            annotation_font=dict(color="#16a34a", size=11, family="JetBrains Mono"),
+            row=1, col=1,
+        )
+
     r = 2
     if show_volume and "Volume" in df:
         colors = ["#16a34a" if c >= o else "#dc2626" for c, o in zip(df["Close"], df["Open"])]
@@ -923,7 +1016,66 @@ with tab_signal:
         vcls = "flat"
     st.markdown(f'<div class="verdict {vcls}">{verdict}</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="section-h">เหตุผลประกอบ</div>', unsafe_allow_html=True)
+    # --- Entry / Exit levels ---
+    levels = compute_levels(df)
+    current = levels["current"]
+    support = levels["support"]
+    resistance = levels["resistance"]
+
+    st.markdown('<div class="section-h">ราคาเข้า / ออก (Support & Resistance)</div>', unsafe_allow_html=True)
+
+    nearest_sup = support[0] if support else None
+    next_sup = support[1] if len(support) > 1 else None
+    nearest_res = resistance[0] if resistance else None
+    next_res = resistance[1] if len(resistance) > 1 else None
+
+    def level_tile(cls: str, role: str, price: float | None, sub: str = "") -> str:
+        if price is None:
+            return f'<div class="level-tile {cls}"><div class="role">{role}</div><div class="price">—</div><div class="delta">ข้อมูลไม่พอ</div></div>'
+        delta_pct = (price / current - 1) * 100
+        delta_str = f"{delta_pct:+.2f}% จากราคาปัจจุบัน" if not sub else sub
+        return (
+            f'<div class="level-tile {cls}"><div class="role">{role}</div>'
+            f'<div class="price">{price:,.2f}</div><div class="delta">{delta_str}</div></div>'
+        )
+
+    stop_loss = nearest_sup * 0.98 if nearest_sup else None
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.markdown(level_tile("current", "ราคาปัจจุบัน", current, "—"), unsafe_allow_html=True)
+    c2.markdown(level_tile("entry", "🟢 Buy Zone", nearest_sup, f"แนวรับ S1" if nearest_sup else ""), unsafe_allow_html=True)
+    c3.markdown(level_tile("stop", "🛑 Stop Loss", stop_loss, f"~2% ใต้ S1" if stop_loss else ""), unsafe_allow_html=True)
+    c4.markdown(level_tile("target", "🎯 Target 1", nearest_res, f"แนวต้าน R1" if nearest_res else ""), unsafe_allow_html=True)
+    c5.markdown(level_tile("target", "🎯 Target 2", next_res, f"แนวต้าน R2" if next_res else ""), unsafe_allow_html=True)
+
+    # Risk/Reward
+    if nearest_sup and stop_loss and nearest_res:
+        risk = current - stop_loss
+        reward = nearest_res - current
+        if risk > 0:
+            rr = reward / risk
+            rr_color = "#166534" if rr >= 2 else ("#a16207" if rr >= 1 else "#991b1b")
+            st.markdown(
+                f'<div style="margin-top:0.5rem;">'
+                f'<span class="rr-badge">Risk/Reward (ซื้อราคานี้ → T1) · '
+                f'<b style="color:{rr_color};">{rr:.2f} : 1</b></span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+    # --- All levels table ---
+    if support or resistance:
+        with st.expander("ดูแนวรับ/แนวต้านทั้งหมด"):
+            rows = []
+            for i, r in enumerate(resistance, 1):
+                rows.append({"ประเภท": f"🔴 แนวต้าน R{i}", "ราคา": f"{r:,.2f}", "ห่างจากปัจจุบัน": f"{(r/current-1)*100:+.2f}%"})
+            rows.append({"ประเภท": "⚪ ราคาปัจจุบัน", "ราคา": f"{current:,.2f}", "ห่างจากปัจจุบัน": "0.00%"})
+            for i, s in enumerate(support, 1):
+                rows.append({"ประเภท": f"🟢 แนวรับ S{i}", "ราคา": f"{s:,.2f}", "ห่างจากปัจจุบัน": f"{(s/current-1)*100:+.2f}%"})
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+    st.write("")
+    st.markdown('<div class="section-h">เหตุผลสัญญาณ</div>', unsafe_allow_html=True)
     reasons_html = "".join(
         f'<div class="tile" style="margin-bottom:0.5rem;"><div class="value" style="font-size:0.95rem;font-weight:500;">{r}</div></div>'
         for r in reasons
