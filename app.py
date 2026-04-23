@@ -1,4 +1,4 @@
-"""Real-time stock dashboard — technical analysis + news."""
+"""แดชบอร์ดหุ้นเรียลไทม์ — วิเคราะห์เทคนิค + ข่าว (แปลไทย) + ไอเดียลงทุน"""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -12,7 +12,7 @@ from deep_translator import GoogleTranslator
 from plotly.subplots import make_subplots
 
 st.set_page_config(
-    page_title="Stock Dashboard",
+    page_title="แดชบอร์ดหุ้น",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -598,26 +598,26 @@ PICKS: dict[str, dict] = {
 
 
 CATEGORIES: dict[str, list[str]] = {
-    "🔥 Mega Cap": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK-B"],
-    "💻 Technology": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AVGO", "ORCL", "CRM", "ADBE", "AMD", "INTC", "CSCO"],
-    "💰 Finance": ["JPM", "BAC", "WFC", "GS", "MS", "V", "MA", "BLK", "C", "AXP"],
-    "🏥 Healthcare": ["JNJ", "UNH", "LLY", "PFE", "ABBV", "MRK", "TMO", "ABT", "DHR", "BMY"],
-    "⚡ Energy": ["XOM", "CVX", "COP", "SLB", "OXY", "EOG", "PSX", "MPC"],
-    "🛒 Consumer": ["AMZN", "WMT", "COST", "PG", "KO", "PEP", "MCD", "NKE", "SBUX", "TGT"],
-    "🚗 Auto / EV": ["TSLA", "F", "GM", "RIVN", "LCID", "TM", "HMC", "STLA", "BYDDY"],
-    "🎮 Media / Gaming": ["NFLX", "DIS", "SONY", "EA", "TTWO", "RBLX", "SPOT", "ROKU"],
-    "✈️ Airlines / Travel": ["DAL", "UAL", "AAL", "LUV", "BA", "BKNG", "ABNB", "MAR"],
-    "🪙 Crypto": ["BTC-USD", "ETH-USD", "SOL-USD", "BNB-USD", "XRP-USD", "DOGE-USD", "ADA-USD", "AVAX-USD"],
-    "📊 Indices": ["^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^FTSE", "^N225", "^HSI"],
-    "🌐 ETFs": ["SPY", "QQQ", "VOO", "VTI", "IWM", "DIA", "ARKK", "GLD", "TLT"],
-    "🇨🇳 China ADR": ["BABA", "JD", "PDD", "NIO", "LI", "XPEV", "BIDU", "TME"],
-    "🏦 Thai ADR / SET": ["PTT.BK", "ADVANC.BK", "AOT.BK", "CPALL.BK", "KBANK.BK", "SCB.BK", "PTTEP.BK", "DELTA.BK"],
+    "🔥 หุ้นยักษ์ใหญ่": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK-B"],
+    "💻 เทคโนโลยี": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AVGO", "ORCL", "CRM", "ADBE", "AMD", "INTC", "CSCO"],
+    "💰 การเงิน / ธนาคาร": ["JPM", "BAC", "WFC", "GS", "MS", "V", "MA", "BLK", "C", "AXP"],
+    "🏥 สุขภาพ / ยา": ["JNJ", "UNH", "LLY", "PFE", "ABBV", "MRK", "TMO", "ABT", "DHR", "BMY"],
+    "⚡ พลังงาน": ["XOM", "CVX", "COP", "SLB", "OXY", "EOG", "PSX", "MPC"],
+    "🛒 สินค้าอุปโภคบริโภค": ["AMZN", "WMT", "COST", "PG", "KO", "PEP", "MCD", "NKE", "SBUX", "TGT"],
+    "🚗 รถยนต์ / EV": ["TSLA", "F", "GM", "RIVN", "LCID", "TM", "HMC", "STLA", "BYDDY"],
+    "🎮 สื่อ / เกม": ["NFLX", "DIS", "SONY", "EA", "TTWO", "RBLX", "SPOT", "ROKU"],
+    "✈️ สายการบิน / ท่องเที่ยว": ["DAL", "UAL", "AAL", "LUV", "BA", "BKNG", "ABNB", "MAR"],
+    "🪙 คริปโต": ["BTC-USD", "ETH-USD", "SOL-USD", "BNB-USD", "XRP-USD", "DOGE-USD", "ADA-USD", "AVAX-USD"],
+    "📊 ดัชนีตลาด": ["^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^FTSE", "^N225", "^HSI"],
+    "🌐 กองทุน ETF": ["SPY", "QQQ", "VOO", "VTI", "IWM", "DIA", "ARKK", "GLD", "TLT"],
+    "🇨🇳 หุ้นจีน (ADR)": ["BABA", "JD", "PDD", "NIO", "LI", "XPEV", "BIDU", "TME"],
+    "🏦 หุ้นไทย (SET)": ["PTT.BK", "ADVANC.BK", "AOT.BK", "CPALL.BK", "KBANK.BK", "SCB.BK", "PTTEP.BK", "DELTA.BK"],
 }
 
 if "ticker" not in st.session_state:
     st.session_state.ticker = "AAPL"
 if "category" not in st.session_state:
-    st.session_state.category = "🔥 Mega Cap"
+    st.session_state.category = "🔥 หุ้นยักษ์ใหญ่"
 
 with st.sidebar:
     st.markdown(
@@ -625,17 +625,17 @@ with st.sidebar:
         <div class="brand">
             <div class="logo">📈</div>
             <div>
-                <div class="name">Stockscope</div>
-                <div class="sub">Real-time · Global</div>
+                <div class="name">แดชบอร์ดหุ้น</div>
+                <div class="sub">เรียลไทม์ · ทั่วโลก</div>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="section-h">Ticker</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-h">ค้นหาหุ้น</div>', unsafe_allow_html=True)
     ticker_input = st.text_input(
-        "Ticker",
+        "รหัสหุ้น",
         value=st.session_state.ticker,
         placeholder="AAPL, TSLA, BTC-USD, ^GSPC …",
         label_visibility="collapsed",
@@ -643,7 +643,7 @@ with st.sidebar:
     ticker = ticker_input.upper().strip()
     st.session_state.ticker = ticker
 
-    st.markdown('<div class="section-h">Category</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-h">หมวดหมู่</div>', unsafe_allow_html=True)
 
     pick_labels = [f"{name}" for name in PICKS.keys()]
     all_options = list(CATEGORIES.keys()) + ["──── 💡 ไอเดีย ────"] + pick_labels
@@ -740,32 +740,46 @@ with st.sidebar:
             st.session_state.ticker = sym
             st.rerun()
 
-    st.markdown('<div class="section-h">Timeframe</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-h">ช่วงเวลา</div>', unsafe_allow_html=True)
+    period_labels = {
+        "5d": "5 วัน", "1mo": "1 เดือน", "3mo": "3 เดือน", "6mo": "6 เดือน",
+        "1y": "1 ปี", "2y": "2 ปี", "5y": "5 ปี", "10y": "10 ปี", "max": "ทั้งหมด",
+    }
     period = st.selectbox(
-        "Period", ["5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "max"],
-        index=4, label_visibility="collapsed",
+        "ช่วงย้อนหลัง",
+        list(period_labels.keys()),
+        index=4,
+        format_func=lambda x: period_labels[x],
+        label_visibility="collapsed",
     )
+    interval_labels = {
+        "1m": "1 นาที", "5m": "5 นาที", "15m": "15 นาที", "30m": "30 นาที",
+        "1h": "1 ชั่วโมง", "1d": "1 วัน", "1wk": "1 สัปดาห์", "1mo": "1 เดือน",
+    }
     interval = st.selectbox(
-        "Interval", ["1m", "5m", "15m", "30m", "1h", "1d", "1wk", "1mo"],
-        index=5, label_visibility="collapsed",
-        help="1m ใช้ได้กับช่วง ≤7 วัน",
+        "ช่วงเวลาต่อแท่ง",
+        list(interval_labels.keys()),
+        index=5,
+        format_func=lambda x: interval_labels[x],
+        label_visibility="collapsed",
+        help="1 นาที ใช้ได้กับข้อมูลย้อนหลังไม่เกิน 7 วัน",
     )
 
-    st.markdown('<div class="section-h">Indicators</div>', unsafe_allow_html=True)
-    show_sma = st.checkbox("SMA 20 / 50 / 200", value=True)
-    show_bb = st.checkbox("Bollinger Bands", value=False)
-    show_volume = st.checkbox("Volume", value=True)
+    st.markdown('<div class="section-h">ตัวชี้วัด</div>', unsafe_allow_html=True)
+    show_sma = st.checkbox("เส้นค่าเฉลี่ย SMA 20 / 50 / 200", value=True)
+    show_bb = st.checkbox("แถบ Bollinger Bands", value=False)
+    show_volume = st.checkbox("ปริมาณซื้อขาย", value=True)
     show_rsi = st.checkbox("RSI (14)", value=True)
     show_macd = st.checkbox("MACD (12, 26, 9)", value=True)
 
-    st.markdown('<div class="section-h">Options</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-h">ตัวเลือก</div>', unsafe_allow_html=True)
     translate_news = st.checkbox("🌐 แปลข่าวเป็นภาษาไทย", value=True)
 
     st.write("")
-    if st.button("🔄 Refresh data", use_container_width=True):
+    if st.button("🔄 อัพเดตข้อมูล", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
-    st.caption("Yahoo Finance · delay ~1 นาที · cache 60s")
+    st.caption("ข้อมูลจาก Yahoo Finance · หน่วง ~1 นาที · แคช 60 วิ")
 
 if not ticker:
     st.info("ใส่รหัสหุ้นทางซ้าย")
@@ -814,7 +828,7 @@ with hero_right:
     st.markdown(
         f"""
         <div class="hero" style="text-align:right;">
-            <div class="sym">Last price · {currency}</div>
+            <div class="sym">ราคาล่าสุด · {currency}</div>
             <div class="price">{last_close:,.2f}</div>
             <div class="chip {chip_cls}">{arrow} {change:+.2f} ({pct:+.2f}%)</div>
         </div>
@@ -843,10 +857,10 @@ w52_lo = info.get("fiftyTwoWeekLow")
 w52_str = f"{w52_lo:,.2f} – {w52_hi:,.2f}" if w52_hi and w52_lo else "—"
 
 t1, t2, t3, t4 = st.columns(4)
-t1.markdown(tile("Volume", vol_str), unsafe_allow_html=True)
-t2.markdown(tile("Range (period)", rng_str), unsafe_allow_html=True)
-t3.markdown(tile("Market Cap", mcap_str), unsafe_allow_html=True)
-t4.markdown(tile("52-Week Range", w52_str), unsafe_allow_html=True)
+t1.markdown(tile("ปริมาณซื้อขาย", vol_str), unsafe_allow_html=True)
+t2.markdown(tile("ช่วงราคา (ย้อนหลัง)", rng_str), unsafe_allow_html=True)
+t3.markdown(tile("มูลค่าตลาด", mcap_str), unsafe_allow_html=True)
+t4.markdown(tile("ช่วงราคา 52 สัปดาห์", w52_str), unsafe_allow_html=True)
 st.write("")
 
 tab_chart, tab_stats, tab_news, tab_signal = st.tabs(
@@ -953,7 +967,7 @@ with tab_chart:
     if _stop is not None:
         fig.add_hline(
             y=_stop, line_dash="longdashdot", line_color="#ea580c", line_width=1.8, opacity=0.95,
-            annotation_text=f" 🛑 Stop Loss · {_stop:,.2f} ",
+            annotation_text=f" 🛑 ตัดขาดทุน · {_stop:,.2f} ",
             annotation_position="bottom left",
             annotation_font=dict(color="#ffffff", size=11, family="Inter"),
             annotation_bgcolor="#ea580c",
@@ -1031,25 +1045,25 @@ with tab_stats:
     col1, col2, col3 = st.columns(3)
     with col1:
         st.subheader("ราคาและขนาด")
-        st.write(f"**Market Cap:** {fmt(info.get('marketCap'), money=True)}")
-        st.write(f"**52W High:** {fmt(info.get('fiftyTwoWeekHigh'))}")
-        st.write(f"**52W Low:** {fmt(info.get('fiftyTwoWeekLow'))}")
-        st.write(f"**Avg Volume:** {fmt(info.get('averageVolume'), money=True)}")
-        st.write(f"**Beta:** {fmt(info.get('beta'))}")
+        st.write(f"**มูลค่าตลาด:** {fmt(info.get('marketCap'), money=True)}")
+        st.write(f"**สูงสุด 52 สัปดาห์:** {fmt(info.get('fiftyTwoWeekHigh'))}")
+        st.write(f"**ต่ำสุด 52 สัปดาห์:** {fmt(info.get('fiftyTwoWeekLow'))}")
+        st.write(f"**ปริมาณเฉลี่ย:** {fmt(info.get('averageVolume'), money=True)}")
+        st.write(f"**ค่า Beta (ความผันผวน):** {fmt(info.get('beta'))}")
     with col2:
-        st.subheader("Valuation")
-        st.write(f"**P/E (trailing):** {fmt(info.get('trailingPE'))}")
-        st.write(f"**P/E (forward):** {fmt(info.get('forwardPE'))}")
-        st.write(f"**PEG:** {fmt(info.get('pegRatio'))}")
-        st.write(f"**P/B:** {fmt(info.get('priceToBook'))}")
-        st.write(f"**EPS (TTM):** {fmt(info.get('trailingEps'))}")
+        st.subheader("มูลค่าหุ้น (Valuation)")
+        st.write(f"**P/E (ย้อนหลัง):** {fmt(info.get('trailingPE'))}")
+        st.write(f"**P/E (คาดการณ์):** {fmt(info.get('forwardPE'))}")
+        st.write(f"**PEG (P/E ต่อการเติบโต):** {fmt(info.get('pegRatio'))}")
+        st.write(f"**P/B (ราคาต่อมูลค่าทางบัญชี):** {fmt(info.get('priceToBook'))}")
+        st.write(f"**EPS (กำไรต่อหุ้น 12 เดือนล่าสุด):** {fmt(info.get('trailingEps'))}")
     with col3:
-        st.subheader("ปันผล & กำไร")
-        st.write(f"**Dividend Yield:** {fmt(info.get('dividendYield'), pct=True)}")
-        st.write(f"**Payout Ratio:** {fmt(info.get('payoutRatio'), pct=True)}")
-        st.write(f"**Profit Margin:** {fmt(info.get('profitMargins'), pct=True)}")
-        st.write(f"**ROE:** {fmt(info.get('returnOnEquity'), pct=True)}")
-        st.write(f"**Revenue Growth:** {fmt(info.get('revenueGrowth'), pct=True)}")
+        st.subheader("ปันผล & ความสามารถทำกำไร")
+        st.write(f"**อัตราปันผล:** {fmt(info.get('dividendYield'), pct=True)}")
+        st.write(f"**สัดส่วนการจ่ายปันผล:** {fmt(info.get('payoutRatio'), pct=True)}")
+        st.write(f"**อัตรากำไรสุทธิ:** {fmt(info.get('profitMargins'), pct=True)}")
+        st.write(f"**ROE (ผลตอบแทนผู้ถือหุ้น):** {fmt(info.get('returnOnEquity'), pct=True)}")
+        st.write(f"**การเติบโตรายได้:** {fmt(info.get('revenueGrowth'), pct=True)}")
 
     desc = info.get("longBusinessSummary")
     if desc:
@@ -1154,16 +1168,16 @@ with tab_signal:
     st.markdown('<div class="section-h">🟢 แนวรับ — โซนซื้อ</div>', unsafe_allow_html=True)
     r1 = st.columns(4)
     r1[0].markdown(level_tile("current", "ราคาปัจจุบัน", current, "ตอนนี้"), unsafe_allow_html=True)
-    r1[1].markdown(level_tile("entry", "🟢 Buy Zone 1", buy1, "แนวรับ S1 · ใกล้สุด"), unsafe_allow_html=True)
-    r1[2].markdown(level_tile("entry", "🟢 Buy Zone 2", buy2, "แนวรับ S2 · ถัดลงไป"), unsafe_allow_html=True)
-    r1[3].markdown(level_tile("stop", "🛑 Stop Loss", stop_loss, "~2% ใต้ S2" if buy2 else "~4% ใต้ S1"), unsafe_allow_html=True)
+    r1[1].markdown(level_tile("entry", "🟢 โซนซื้อ 1", buy1, "แนวรับ S1 · ใกล้สุด"), unsafe_allow_html=True)
+    r1[2].markdown(level_tile("entry", "🟢 โซนซื้อ 2", buy2, "แนวรับ S2 · ถัดลงไป"), unsafe_allow_html=True)
+    r1[3].markdown(level_tile("stop", "🛑 ตัดขาดทุน", stop_loss, "~2% ใต้ S2" if buy2 else "~4% ใต้ S1"), unsafe_allow_html=True)
 
     st.write("")
-    st.markdown('<div class="section-h">🔴 แนวต้าน — โซนขาย / Take Profit</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-h">🔴 แนวต้าน — โซนขายทำกำไร</div>', unsafe_allow_html=True)
     r2 = st.columns(3)
-    r2[0].markdown(level_tile("resistance", "🎯 Sell Zone 1", sell1, "แนวต้าน R1 · ใกล้สุด"), unsafe_allow_html=True)
-    r2[1].markdown(level_tile("resistance", "🎯 Sell Zone 2", sell2, "แนวต้าน R2"), unsafe_allow_html=True)
-    r2[2].markdown(level_tile("resistance", "🎯 Sell Zone 3", sell3, "แนวต้าน R3 · ไกลสุด"), unsafe_allow_html=True)
+    r2[0].markdown(level_tile("resistance", "🎯 โซนขาย 1", sell1, "แนวต้าน R1 · ใกล้สุด"), unsafe_allow_html=True)
+    r2[1].markdown(level_tile("resistance", "🎯 โซนขาย 2", sell2, "แนวต้าน R2"), unsafe_allow_html=True)
+    r2[2].markdown(level_tile("resistance", "🎯 โซนขาย 3", sell3, "แนวต้าน R3 · ไกลสุด"), unsafe_allow_html=True)
 
     # Risk/Reward
     if buy1 and stop_loss and sell1:
@@ -1174,7 +1188,7 @@ with tab_signal:
             rr_color = "#166534" if rr >= 2 else ("#a16207" if rr >= 1 else "#991b1b")
             st.markdown(
                 f'<div style="margin-top:0.75rem;">'
-                f'<span class="rr-badge">Risk/Reward (ซื้อราคานี้ → Sell 1) · '
+                f'<span class="rr-badge">ความคุ้มค่า (ซื้อตอนนี้ → จุดขาย 1) · '
                 f'<b style="color:{rr_color};">{rr:.2f} : 1</b></span>'
                 f'</div>',
                 unsafe_allow_html=True,
