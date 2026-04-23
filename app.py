@@ -669,23 +669,75 @@ with st.sidebar:
     st.session_state.ticker = ticker
 
     st.markdown('<div class="section-h">Category</div>', unsafe_allow_html=True)
+
+    pick_labels = [f"{name}" for name in PICKS.keys()]
+    all_options = list(CATEGORIES.keys()) + ["──── 💡 ไอเดีย ────"] + pick_labels
+    try:
+        cat_index = all_options.index(st.session_state.category)
+    except ValueError:
+        cat_index = 0
+
+    def _cat_disabled(opt: str) -> bool:
+        return opt.startswith("──")
+
     category = st.selectbox(
         "Category",
-        list(CATEGORIES.keys()),
-        index=list(CATEGORIES.keys()).index(st.session_state.category),
+        all_options,
+        index=cat_index,
         label_visibility="collapsed",
     )
-    st.session_state.category = category
+    if not _cat_disabled(category):
+        st.session_state.category = category
 
-    tickers_in_cat = CATEGORIES[category]
+    # Resolve to ticker list + optional metadata
+    if category in CATEGORIES:
+        tickers_in_cat = [(s, None, None) for s in CATEGORIES[category]]  # (sym, thesis, reason)
+        show_meta = False
+    elif category in PICKS:
+        cfg = PICKS[category]
+        mode = cfg["mode"]
+        tks = cfg["tickers"]
+        st.caption(cfg["desc"])
+        if mode in ("curated", "options"):
+            tickers_in_cat = [(s, th, None) for s, th in tks.items()]
+            show_meta = False
+        else:
+            # momentum / avoid need live data
+            with st.spinner("กำลังคำนวณ…"):
+                mini = load_mini_batch(tuple(tks))
+            if mode == "momentum":
+                ranked = sorted([t for t in tks if t in mini],
+                                key=lambda t: mini[t]["w1"], reverse=True)[:8]
+                tickers_in_cat = [(t, f"1W {mini[t]['w1']:+.1f}% · RSI {mini[t]['rsi']:.0f}", None) for t in ranked]
+                show_meta = True
+            else:  # avoid
+                flagged = []
+                for t in tks:
+                    d = mini.get(t)
+                    if not d:
+                        continue
+                    if d["rsi"] > 75:
+                        flagged.append((t, f"RSI {d['rsi']:.0f} · ร้อนเกิน", d["rsi"]))
+                    elif d["below_sma20"] and d["below_sma50"]:
+                        flagged.append((t, "ใต้ SMA20 & 50 · trend พัง", d["rsi"]))
+                flagged.sort(key=lambda x: x[2], reverse=True)
+                tickers_in_cat = [(t, r, None) for t, r, _ in flagged[:8]]
+                show_meta = True
+                if not tickers_in_cat:
+                    st.info("ยังไม่มีตัวติดสัญญาณเตือน")
+    else:
+        tickers_in_cat = []
+        show_meta = False
+
     cols = st.columns(2)
-    for i, sym in enumerate(tickers_in_cat):
+    for i, (sym, meta, _) in enumerate(tickers_in_cat):
         display = sym.replace(".BK", "").replace("-USD", "")
+        help_text = f"{sym}" + (f" · {meta}" if meta else "")
         if cols[i % 2].button(
-            f"{display}",
+            display,
             key=f"cat_{category}_{sym}",
             use_container_width=True,
-            help=sym,
+            help=help_text,
         ):
             st.session_state.ticker = sym
             st.rerun()
@@ -799,8 +851,8 @@ t3.markdown(tile("Market Cap", mcap_str), unsafe_allow_html=True)
 t4.markdown(tile("52-Week Range", w52_str), unsafe_allow_html=True)
 st.write("")
 
-tab_chart, tab_stats, tab_news, tab_signal, tab_picks = st.tabs(
-    ["📊 กราฟเทคนิค", "📋 สถิติ", "📰 ข่าว", "🎯 สัญญาณสรุป", "💡 ไอเดีย"]
+tab_chart, tab_stats, tab_news, tab_signal = st.tabs(
+    ["📊 กราฟเทคนิค", "📋 สถิติ", "📰 ข่าว", "🎯 สัญญาณสรุป"]
 )
 
 # ---------- Chart ----------
@@ -1098,107 +1150,3 @@ with tab_signal:
         "ควรพิจารณาปัจจัยพื้นฐาน ข่าว และการจัดการความเสี่ยงของตนเองประกอบ"
     )
 
-# ---------- Picks ----------
-with tab_picks:
-    st.markdown(
-        '<div class="pick-disclaim">⚠️ รายการในหน้านี้เป็น <b>ไอเดียเริ่มต้น</b> '
-        'ไม่ใช่คำแนะนำการลงทุน — หุ้นในหมวด "ห้ามไปยุ่ง" และ "ซิ่ง" คำนวณจากสัญญาณ '
-        'technical ล่าสุด, หมวด "เล็กน่าเติบโต" และ "อนาคตไกล" เป็น curated list '
-        'ศึกษาเพิ่มก่อนทุกครั้ง</div>',
-        unsafe_allow_html=True,
-    )
-
-    all_tickers = set()
-    for pick in PICKS.values():
-        tks = pick["tickers"]
-        all_tickers.update(tks.keys() if isinstance(tks, dict) else tks)
-
-    with st.spinner("กำลังดึงข้อมูลหุ้นทั้งหมด…"):
-        mini = load_mini_batch(tuple(sorted(all_tickers)))
-
-    def render_card(col, sym: str, thesis: str | None, data: dict | None, reason: str | None = None):
-        if not data:
-            col.markdown(
-                f'<div class="pick-card"><div class="top"><span class="sym">{sym}</span></div>'
-                f'<div class="thesis">ข้อมูลไม่พร้อม</div></div>',
-                unsafe_allow_html=True,
-            )
-            return
-        w1_cls = "up" if data["w1"] >= 0 else "down"
-        m1_cls = "up" if data["m1"] >= 0 else "down"
-        m3_cls = "up" if data["m3"] >= 0 else "down"
-        sig_label = {"bull": "🟢 Bullish", "bear": "🔴 Bearish", "flat": "🟡 Neutral"}[data["sig"]]
-        sig_cls = {"bull": "up", "bear": "down", "flat": "flat"}[data["sig"]]
-        thesis_html = f'<div class="thesis">{thesis}</div>' if thesis else ""
-        reason_html = f'<div class="thesis" style="color:#b45309;">{reason}</div>' if reason else ""
-        col.markdown(
-            f"""
-            <div class="pick-card">
-                <div class="top">
-                    <span class="sym">{sym}</span>
-                    <span class="mini-chip {sig_cls}">{sig_label}</span>
-                </div>
-                <div class="price">{data['last']:,.2f}</div>
-                <div class="stats">
-                    <span>1W <b class="{w1_cls}">{data['w1']:+.1f}%</b></span>
-                    <span>1M <b class="{m1_cls}">{data['m1']:+.1f}%</b></span>
-                    <span>3M <b class="{m3_cls}">{data['m3']:+.1f}%</b></span>
-                    <span>RSI <b>{data['rsi']:.0f}</b></span>
-                </div>
-                {thesis_html}
-                {reason_html}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    for theme, cfg in PICKS.items():
-        st.markdown(f"### {theme}")
-        st.markdown(f'<div class="pick-intro">{cfg["desc"]}</div>', unsafe_allow_html=True)
-
-        mode = cfg["mode"]
-        tks = cfg["tickers"]
-
-        if mode == "curated" or mode == "options":
-            items = list(tks.items())
-        elif mode == "momentum":
-            items = sorted(
-                [(t, None) for t in tks if t in mini],
-                key=lambda x: mini[x[0]]["w1"],
-                reverse=True,
-            )[:8]
-        elif mode == "avoid":
-            flagged = []
-            for t in tks:
-                d = mini.get(t)
-                if not d:
-                    continue
-                reason = None
-                if d["rsi"] > 75:
-                    reason = f"⚠️ RSI {d['rsi']:.0f} · ร้อนเกิน อาจย่อ"
-                elif d["below_sma20"] and d["below_sma50"]:
-                    reason = "⚠️ ราคาอยู่ต่ำกว่า SMA20 และ SMA50 · trend พัง"
-                if reason:
-                    flagged.append((t, reason))
-            flagged.sort(key=lambda x: mini[x[0]]["rsi"], reverse=True)
-            items = flagged[:8]
-            if not items:
-                st.info("ตอนนี้ยังไม่มีตัวไหนในลิสต์ที่ติดสัญญาณเตือน")
-
-        cols = st.columns(4)
-        btn_cols = st.columns(4)
-        for i, (sym, extra) in enumerate(items):
-            col_idx = i % 4
-            if col_idx == 0 and i > 0:
-                cols = st.columns(4)
-                btn_cols = st.columns(4)
-            data = mini.get(sym)
-            if mode == "avoid":
-                render_card(cols[col_idx], sym, None, data, reason=extra)
-            else:
-                render_card(cols[col_idx], sym, extra, data)
-            if btn_cols[col_idx].button(f"เปิด {sym} →", key=f"pick_{theme}_{sym}", use_container_width=True):
-                st.session_state.ticker = sym
-                st.rerun()
-
-        st.write("")
