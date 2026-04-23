@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip --version)",
+      "Bash(python -m pip --version)",
+      "Bash(python -m pip install streamlit yfinance plotly pandas numpy)",
+      "Bash(python -c \"import app\")",
+      "Bash(python -c ' *)",
+      "Bash(python -m streamlit run app.py --server.headless true --server.port 8501)",
+      "Bash(echo \"Started PID: $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8501)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8501)",
+      "Bash(tasklist //FI \"IMAGENAME eq python.exe\")",
+      "Bash(python -m pip install deep-translator)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app.py',encoding='utf-8'\\).read\\(\\)\\); print\\('syntax OK'\\)\")",
+      "Bash(taskkill //F //IM python.exe)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('C:/Users/NBODT/Desktop/หุ้น/app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('syntax OK'\\)\")",
+      "Bash(git --version)",
+      "Bash(gh --version)"
+    ]
+  }
+}

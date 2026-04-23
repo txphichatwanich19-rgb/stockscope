@@ -194,6 +194,57 @@ st.markdown(
     .brand .name { font-weight: 700; font-size: 1.05rem; color: #18181b; letter-spacing: -0.01em; }
     .brand .sub  { font-size: 0.7rem; color: #71717a; letter-spacing: 0.08em; text-transform: uppercase; }
 
+    /* Pick card */
+    .pick-card {
+        background: #ffffff;
+        border: 1px solid #e4e4e7;
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        margin-bottom: 0.5rem;
+        height: 100%;
+    }
+    .pick-card .top {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 0.35rem;
+    }
+    .pick-card .sym {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700; font-size: 1.05rem; color: #18181b;
+        letter-spacing: 0.02em;
+    }
+    .pick-card .mini-chip {
+        padding: 0.15rem 0.5rem; border-radius: 999px;
+        font-size: 0.72rem; font-weight: 600;
+        border: 1px solid transparent;
+    }
+    .pick-card .mini-chip.up   { background: #f0fdf4; color: #166534; border-color: #d1fae5; }
+    .pick-card .mini-chip.down { background: #fef2f2; color: #991b1b; border-color: #fee2e2; }
+    .pick-card .mini-chip.flat { background: #f4f4f5; color: #52525b; border-color: #e4e4e7; }
+    .pick-card .price {
+        font-size: 1.35rem; font-weight: 700; color: #18181b;
+        letter-spacing: -0.02em; margin: 0.15rem 0 0.3rem 0;
+    }
+    .pick-card .stats {
+        display: flex; gap: 0.75rem; font-size: 0.78rem; color: #71717a;
+        flex-wrap: wrap; margin-bottom: 0.4rem;
+    }
+    .pick-card .stats b { font-weight: 600; color: #3f3f46; }
+    .pick-card .stats .up   { color: #166534; }
+    .pick-card .stats .down { color: #991b1b; }
+    .pick-card .thesis {
+        color: #52525b; font-size: 0.82rem; line-height: 1.45;
+        padding-top: 0.4rem; border-top: 1px dashed #e4e4e7;
+    }
+
+    .pick-intro {
+        color: #52525b; font-size: 0.9rem; margin-bottom: 0.75rem;
+    }
+    .pick-disclaim {
+        background: #fffbeb; border: 1px solid #fde68a;
+        border-radius: 8px; padding: 0.6rem 0.8rem;
+        color: #92400e; font-size: 0.82rem; margin-bottom: 1rem;
+    }
+
     /* Section heading */
     .section-h {
         font-size: 0.72rem;
@@ -267,6 +318,49 @@ def load_info(ticker: str) -> dict:
         return yf.Ticker(ticker).info or {}
     except Exception:
         return {}
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def load_mini_batch(tickers: tuple[str, ...]) -> dict[str, dict]:
+    """Fetch 3-month daily data for a batch of tickers and compute summary stats."""
+    if not tickers:
+        return {}
+    try:
+        raw = yf.download(
+            list(tickers), period="3mo", interval="1d",
+            auto_adjust=False, progress=False, threads=True, group_by="ticker",
+        )
+    except Exception:
+        return {}
+    out: dict[str, dict] = {}
+    multi = isinstance(raw.columns, pd.MultiIndex)
+    for t in tickers:
+        try:
+            close = raw[t]["Close"].dropna() if multi else raw["Close"].dropna()
+            if len(close) < 3:
+                continue
+            last = float(close.iloc[-1])
+            def chg(days: int) -> float:
+                if len(close) <= days:
+                    return 0.0
+                return (last / float(close.iloc[-days - 1]) - 1) * 100
+            w1 = chg(5)
+            m1 = chg(21)
+            m3 = (last / float(close.iloc[0]) - 1) * 100
+            r = float(rsi(close).iloc[-1])
+            s20 = float(sma(close, 20).iloc[-1])
+            s50 = float(sma(close, 50).iloc[-1]) if len(close) >= 30 else float("nan")
+            if last > s20 and (np.isnan(s50) or last > s50) and r < 70:
+                sig = "bull"
+            elif last < s20 and (np.isnan(s50) or last < s50):
+                sig = "bear"
+            else:
+                sig = "flat"
+            out[t] = {"last": last, "w1": w1, "m1": m1, "m3": m3, "rsi": r, "sig": sig,
+                      "below_sma20": last < s20, "below_sma50": not np.isnan(s50) and last < s50}
+        except Exception:
+            continue
+    return out
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -385,6 +479,70 @@ def build_signal(df: pd.DataFrame) -> tuple[str, list[str]]:
 
 
 # ---------- UI ----------
+PICKS: dict[str, dict] = {
+    "🌱 หุ้นเล็กน่าเติบโต": {
+        "desc": "Small-mid cap growth · ขนาดกลาง-เล็ก ยังมีพื้นที่โต",
+        "mode": "curated",
+        "tickers": {
+            "IONQ":  "Quantum computing pure-play",
+            "RKLB":  "จรวดเล็กคู่แข่ง SpaceX · launch ถี่ขึ้น",
+            "ACHR":  "Air taxi eVTOL · รอ FAA certification",
+            "JOBY":  "eVTOL คู่แข่ง ACHR · หนุนโดย Toyota",
+            "SOUN":  "Voice AI สำหรับ car / restaurant",
+            "HIMS":  "Telehealth + GLP-1 branded",
+            "SOFI":  "Digital bank + fintech platform",
+            "RIOT":  "Bitcoin mining · hash rate top-tier",
+        },
+    },
+    "🚀 หุ้นอนาคตไกล": {
+        "desc": "Megatrend · AI, cloud, semi, biotech · leader รายใหญ่",
+        "mode": "curated",
+        "tickers": {
+            "NVDA":  "AI GPU monopoly · data-center demand ยังแรง",
+            "MSFT":  "Cloud Azure + OpenAI + Copilot ทุก product",
+            "GOOGL": "Search + Gemini + YouTube + Cloud",
+            "AMZN":  "AWS + retail + ads · cash flow มหาศาล",
+            "META":  "AI LLaMA + ads scale + Reality Labs",
+            "TSM":   "Semiconductor foundry · ผลิตให้ทุกราย",
+            "ASML":  "EUV lithography · ไม่มีคู่แข่ง",
+            "LLY":   "GLP-1 / diabetes / Alzheimer · pipeline แน่น",
+        },
+    },
+    "🚦 หุ้นซิ่ง": {
+        "desc": "Momentum · เรียงตามการเปลี่ยนแปลงราคา 1 สัปดาห์ล่าสุด",
+        "mode": "momentum",
+        "tickers": [
+            "NVDA", "TSLA", "AMD", "PLTR", "MSTR", "COIN", "MARA",
+            "SMCI", "ARM", "META", "NFLX", "AVGO", "CRWD", "SNOW",
+            "IONQ", "RKLB", "SOFI", "HIMS",
+        ],
+    },
+    "⚠️ ห้ามไปยุ่งตอนนี้": {
+        "desc": "ตัวที่มีสัญญาณเตือน · RSI > 75 (ร้อนเกิน) หรือราคาทะลุ SMA ลง",
+        "mode": "avoid",
+        "tickers": [
+            "NVDA", "TSLA", "AAPL", "MSFT", "GOOGL", "AMZN", "META",
+            "PLTR", "AMD", "NFLX", "AVGO", "COIN", "MSTR", "SMCI",
+            "ARM", "SNOW", "CRWD", "ORCL", "UBER", "LYFT",
+        ],
+    },
+    "🎰 Option Plays (Call / Put)": {
+        "desc": "หุ้น option liquid สูง · โน้มเอียง bullish → ซื้อ Call, bearish → ซื้อ Put",
+        "mode": "options",
+        "tickers": {
+            "SPY":  "S&P 500 ETF · spread แคบสุด",
+            "QQQ":  "Nasdaq 100 ETF",
+            "TSLA": "IV สูง · premium รวย",
+            "NVDA": "AI / earnings play",
+            "AAPL": "Weekly liquid · IV ต่ำ premium ถูก",
+            "AMZN": "Earnings play",
+            "META": "Earnings play",
+            "AMD":  "Trend / volatility play",
+        },
+    },
+}
+
+
 CATEGORIES: dict[str, list[str]] = {
     "🔥 Mega Cap": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK-B"],
     "💻 Technology": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AVGO", "ORCL", "CRM", "ADBE", "AMD", "INTC", "CSCO"],
@@ -562,7 +720,9 @@ t3.markdown(tile("Market Cap", mcap_str), unsafe_allow_html=True)
 t4.markdown(tile("52-Week Range", w52_str), unsafe_allow_html=True)
 st.write("")
 
-tab_chart, tab_stats, tab_news, tab_signal = st.tabs(["📊 กราฟเทคนิค", "📋 สถิติ", "📰 ข่าว", "🎯 สัญญาณสรุป"])
+tab_chart, tab_stats, tab_news, tab_signal, tab_picks = st.tabs(
+    ["📊 กราฟเทคนิค", "📋 สถิติ", "📰 ข่าว", "🎯 สัญญาณสรุป", "💡 ไอเดีย"]
+)
 
 # ---------- Chart ----------
 with tab_chart:
@@ -775,3 +935,108 @@ with tab_signal:
         "⚠️ นี่เป็นสัญญาณ rule-based จาก indicator เท่านั้น ไม่ใช่คำแนะนำการลงทุน "
         "ควรพิจารณาปัจจัยพื้นฐาน ข่าว และการจัดการความเสี่ยงของตนเองประกอบ"
     )
+
+# ---------- Picks ----------
+with tab_picks:
+    st.markdown(
+        '<div class="pick-disclaim">⚠️ รายการในหน้านี้เป็น <b>ไอเดียเริ่มต้น</b> '
+        'ไม่ใช่คำแนะนำการลงทุน — หุ้นในหมวด "ห้ามไปยุ่ง" และ "ซิ่ง" คำนวณจากสัญญาณ '
+        'technical ล่าสุด, หมวด "เล็กน่าเติบโต" และ "อนาคตไกล" เป็น curated list '
+        'ศึกษาเพิ่มก่อนทุกครั้ง</div>',
+        unsafe_allow_html=True,
+    )
+
+    all_tickers = set()
+    for pick in PICKS.values():
+        tks = pick["tickers"]
+        all_tickers.update(tks.keys() if isinstance(tks, dict) else tks)
+
+    with st.spinner("กำลังดึงข้อมูลหุ้นทั้งหมด…"):
+        mini = load_mini_batch(tuple(sorted(all_tickers)))
+
+    def render_card(col, sym: str, thesis: str | None, data: dict | None, reason: str | None = None):
+        if not data:
+            col.markdown(
+                f'<div class="pick-card"><div class="top"><span class="sym">{sym}</span></div>'
+                f'<div class="thesis">ข้อมูลไม่พร้อม</div></div>',
+                unsafe_allow_html=True,
+            )
+            return
+        w1_cls = "up" if data["w1"] >= 0 else "down"
+        m1_cls = "up" if data["m1"] >= 0 else "down"
+        m3_cls = "up" if data["m3"] >= 0 else "down"
+        sig_label = {"bull": "🟢 Bullish", "bear": "🔴 Bearish", "flat": "🟡 Neutral"}[data["sig"]]
+        sig_cls = {"bull": "up", "bear": "down", "flat": "flat"}[data["sig"]]
+        thesis_html = f'<div class="thesis">{thesis}</div>' if thesis else ""
+        reason_html = f'<div class="thesis" style="color:#b45309;">{reason}</div>' if reason else ""
+        col.markdown(
+            f"""
+            <div class="pick-card">
+                <div class="top">
+                    <span class="sym">{sym}</span>
+                    <span class="mini-chip {sig_cls}">{sig_label}</span>
+                </div>
+                <div class="price">{data['last']:,.2f}</div>
+                <div class="stats">
+                    <span>1W <b class="{w1_cls}">{data['w1']:+.1f}%</b></span>
+                    <span>1M <b class="{m1_cls}">{data['m1']:+.1f}%</b></span>
+                    <span>3M <b class="{m3_cls}">{data['m3']:+.1f}%</b></span>
+                    <span>RSI <b>{data['rsi']:.0f}</b></span>
+                </div>
+                {thesis_html}
+                {reason_html}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    for theme, cfg in PICKS.items():
+        st.markdown(f"### {theme}")
+        st.markdown(f'<div class="pick-intro">{cfg["desc"]}</div>', unsafe_allow_html=True)
+
+        mode = cfg["mode"]
+        tks = cfg["tickers"]
+
+        if mode == "curated" or mode == "options":
+            items = list(tks.items())
+        elif mode == "momentum":
+            items = sorted(
+                [(t, None) for t in tks if t in mini],
+                key=lambda x: mini[x[0]]["w1"],
+                reverse=True,
+            )[:8]
+        elif mode == "avoid":
+            flagged = []
+            for t in tks:
+                d = mini.get(t)
+                if not d:
+                    continue
+                reason = None
+                if d["rsi"] > 75:
+                    reason = f"⚠️ RSI {d['rsi']:.0f} · ร้อนเกิน อาจย่อ"
+                elif d["below_sma20"] and d["below_sma50"]:
+                    reason = "⚠️ ราคาอยู่ต่ำกว่า SMA20 และ SMA50 · trend พัง"
+                if reason:
+                    flagged.append((t, reason))
+            flagged.sort(key=lambda x: mini[x[0]]["rsi"], reverse=True)
+            items = flagged[:8]
+            if not items:
+                st.info("ตอนนี้ยังไม่มีตัวไหนในลิสต์ที่ติดสัญญาณเตือน")
+
+        cols = st.columns(4)
+        btn_cols = st.columns(4)
+        for i, (sym, extra) in enumerate(items):
+            col_idx = i % 4
+            if col_idx == 0 and i > 0:
+                cols = st.columns(4)
+                btn_cols = st.columns(4)
+            data = mini.get(sym)
+            if mode == "avoid":
+                render_card(cols[col_idx], sym, None, data, reason=extra)
+            else:
+                render_card(cols[col_idx], sym, extra, data)
+            if btn_cols[col_idx].button(f"เปิด {sym} →", key=f"pick_{theme}_{sym}", use_container_width=True):
+                st.session_state.ticker = sym
+                st.rerun()
+
+        st.write("")
