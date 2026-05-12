@@ -279,6 +279,41 @@ st.markdown(
         box-shadow: 0 1px 2px rgba(146,64,14,0.05);
     }
 
+    /* Level pills bar (above chart) */
+    .lv-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.6rem;
+    }
+    .lv-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid;
+        font-size: 0.88rem;
+        font-weight: 500;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    }
+    .lv-pill .lv-role {
+        font-weight: 600;
+        font-size: 0.82rem;
+    }
+    .lv-pill .lv-price {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 0.95rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 768px) {
+        .lv-pill { padding: 0.4rem 0.7rem; font-size: 0.8rem; }
+        .lv-pill .lv-price { font-size: 0.88rem; }
+        .lv-pill .lv-role { font-size: 0.76rem; }
+    }
+
     /* Section heading */
     .section-h {
         font-size: 0.7rem;
@@ -975,6 +1010,41 @@ tab_chart, tab_stats, tab_news, tab_signal = st.tabs(
 
 # ---------- Chart (TradingView widget) ----------
 with tab_chart:
+    # Quick levels banner above chart
+    _lv = compute_levels(df)
+    _sup = _lv["support"]
+    _res = _lv["resistance"]
+    _stop_lv = None
+    if len(_sup) >= 2:
+        _stop_lv = _sup[1] * 0.98
+    elif len(_sup) == 1:
+        _stop_lv = _sup[0] * 0.96
+
+    def _lv_pill(role: str, price: float | None, color_bg: str, color_text: str, color_border: str) -> str:
+        if price is None:
+            return ""
+        return (
+            f'<div class="lv-pill" style="background:{color_bg};color:{color_text};'
+            f'border-color:{color_border};">'
+            f'<span class="lv-role">{role}</span>'
+            f'<span class="lv-price">{price:,.2f}</span>'
+            f'</div>'
+        )
+
+    pills_html = '<div class="lv-bar">'
+    pills_html += _lv_pill("🟢 ซื้อ 1", _sup[0] if len(_sup) >= 1 else None, "#f0fdf4", "#166534", "#a7f3d0")
+    pills_html += _lv_pill("🟢 ซื้อ 2", _sup[1] if len(_sup) >= 2 else None, "#f0fdf4", "#166534", "#a7f3d0")
+    pills_html += _lv_pill("🛑 ตัดขาดทุน", _stop_lv, "#fff7ed", "#9a3412", "#fed7aa")
+    pills_html += _lv_pill("🔴 ขาย 1", _res[0] if len(_res) >= 1 else None, "#fef2f2", "#991b1b", "#fecaca")
+    pills_html += _lv_pill("🔴 ขาย 2", _res[1] if len(_res) >= 2 else None, "#fef2f2", "#991b1b", "#fecaca")
+    pills_html += _lv_pill("🔴 ขาย 3", _res[2] if len(_res) >= 3 else None, "#fef2f2", "#991b1b", "#fecaca")
+    pills_html += "</div>"
+    st.markdown(pills_html, unsafe_allow_html=True)
+    st.caption(
+        "💡 ในกราฟ TradingView คลิกเครื่องมือ **Horizontal Line** ทางซ้าย → "
+        "ป้อนราคาด้านบนเพื่อวาดเส้นแนวรับ/แนวต้านในกราฟเอง"
+    )
+
     tv_symbol = to_tv_symbol(ticker)
     tv_interval = to_tv_interval(interval)
     tv_html = f"""
