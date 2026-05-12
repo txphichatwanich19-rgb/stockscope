@@ -12,6 +12,28 @@ import streamlit.components.v1 as components
 import yfinance as yf
 from deep_translator import GoogleTranslator
 from plotly.subplots import make_subplots
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+_sentiment_analyzer = SentimentIntensityAnalyzer()
+
+
+def sentiment_score(text: str) -> float:
+    """Return VADER compound score: -1 (very neg) to +1 (very pos)."""
+    if not text:
+        return 0.0
+    try:
+        return _sentiment_analyzer.polarity_scores(text)["compound"]
+    except Exception:
+        return 0.0
+
+
+def sentiment_label(score: float) -> tuple[str, str]:
+    """Returns (emoji+label, css class)."""
+    if score >= 0.4:  return "🟢 บวกมาก", "up"
+    if score >= 0.1:  return "🟢 บวก", "up"
+    if score > -0.1:  return "⚪ กลาง", "flat"
+    if score > -0.4:  return "🔴 ลบ", "down"
+    return "🔴 ลบมาก", "down"
 
 st.set_page_config(
     page_title="แดชบอร์ดหุ้น",
@@ -219,6 +241,41 @@ st.markdown(
     }
     .brand .name { font-weight: 700; font-size: 1.1rem; color: #0f172a; letter-spacing: -0.02em; }
     .brand .sub  { font-size: 0.7rem; color: #64748b; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; }
+
+    /* Generic mini-chip (used for sentiment + small badges) */
+    .mini-chip {
+        display: inline-flex; align-items: center;
+        padding: 0.18rem 0.55rem; border-radius: 999px;
+        font-size: 0.74rem; font-weight: 600;
+        border: 1px solid transparent;
+    }
+    .mini-chip.up   { background: #f0fdf4; color: #166534; border-color: #d1fae5; }
+    .mini-chip.down { background: #fef2f2; color: #991b1b; border-color: #fee2e2; }
+    .mini-chip.flat { background: #f4f4f5; color: #52525b; border-color: #e4e4e7; }
+
+    /* News overall sentiment */
+    .sent-overall {
+        display: flex; justify-content: space-between; align-items: center;
+        background: #ffffff;
+        border: 1px solid rgba(15,23,42,0.06);
+        border-radius: 12px;
+        padding: 0.7rem 1rem;
+        margin-bottom: 0.7rem;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.03);
+    }
+    .sent-overall-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+    }
+    .sent-overall-score {
+        display: flex; align-items: center; gap: 0.6rem;
+    }
+    .sent-counts {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        color: #64748b;
+    }
 
     /* Level tile */
     .level-tile {
@@ -1365,9 +1422,43 @@ with tab_stats:
         st.write(f"**ROE (ผลตอบแทนผู้ถือหุ้น):** {fmt(info.get('returnOnEquity'), pct=True)}")
         st.write(f"**การเติบโตรายได้:** {fmt(info.get('revenueGrowth'), pct=True)}")
 
+    # CEO + Key Officers section
+    officers = info.get("companyOfficers", []) or []
+    if officers:
+        st.write("")
+        st.subheader("👔 ผู้บริหาร")
+        ceo = next(
+            (o for o in officers if "CEO" in (o.get("title") or "").upper()
+             or "CHIEF EXECUTIVE" in (o.get("title") or "").upper()),
+            officers[0],
+        )
+        cur_year = datetime.now().year
+        ceo_age = ceo.get("age") or (cur_year - ceo["yearBorn"] if ceo.get("yearBorn") else None)
+        ceo_pay = ceo.get("totalPay")
+        col_ceo, col_others = st.columns([1.2, 1])
+        with col_ceo:
+            st.markdown(f"**{ceo.get('name', '—')}**")
+            st.caption(ceo.get("title", "—"))
+            ceo_bits = []
+            if ceo_age:
+                ceo_bits.append(f"อายุ {ceo_age} ปี")
+            if ceo_pay:
+                ceo_bits.append(f"ค่าตอบแทน ${ceo_pay:,.0f}/ปี")
+            if ceo_bits:
+                st.write(" · ".join(ceo_bits))
+        with col_others:
+            others = [o for o in officers if o is not ceo][:4]
+            if others:
+                st.caption("**ผู้บริหารคนอื่น**")
+                for o in others:
+                    name = o.get("name", "—")
+                    title = o.get("title", "—")
+                    st.markdown(f"• {name} — _{title}_")
+
     desc = info.get("longBusinessSummary")
     if desc:
-        with st.expander("เกี่ยวกับบริษัท"):
+        st.write("")
+        with st.expander("📄 เกี่ยวกับบริษัท"):
             st.write(desc)
 
 # ---------- News ----------
@@ -1377,6 +1468,30 @@ with tab_news:
         st.info("ไม่พบข่าวล่าสุดสำหรับหุ้นตัวนี้")
 
     news_list = news[:25]
+    # Sentiment (from English original — VADER works on English)
+    for n in news_list:
+        text = (n.get("title") or "") + ". " + (n.get("summary") or "")
+        n["sentiment"] = sentiment_score(text)
+
+    if news_list:
+        avg_sent = sum(n["sentiment"] for n in news_list) / len(news_list)
+        pos = sum(1 for n in news_list if n["sentiment"] >= 0.1)
+        neg = sum(1 for n in news_list if n["sentiment"] <= -0.1)
+        neu = len(news_list) - pos - neg
+        label, cls = sentiment_label(avg_sent)
+        st.markdown(
+            f"""
+            <div class="sent-overall">
+                <div class="sent-overall-label">📊 ภาพรวมข่าวล่าสุด {len(news_list)} ข่าว</div>
+                <div class="sent-overall-score">
+                    <span class="mini-chip {cls}">{label}</span>
+                    <span class="sent-counts">🟢 {pos} · ⚪ {neu} · 🔴 {neg}</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     if translate_news and news_list:
         with st.spinner("กำลังแปลข่าวเป็นภาษาไทย…"):
             for n in news_list:
@@ -1416,12 +1531,15 @@ with tab_news:
             f'<div class="summary">{_html.escape(shown_summary)}</div>' if shown_summary else ""
         )
 
+        sent_label, sent_cls = sentiment_label(n.get("sentiment", 0))
+        sent_chip = f'<span class="mini-chip {sent_cls}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">{sent_label}</span>'
+
         st.markdown(
             f"""
             <div class="news-card">
                 <div class="title">{title_html}</div>
                 {orig_line}
-                <div class="meta">📰 {_html.escape(pub)} · 🕐 {when_str}</div>
+                <div class="meta">📰 {_html.escape(pub)} · 🕐 {when_str} · {sent_chip}</div>
                 {summary_html}
             </div>
             """,
