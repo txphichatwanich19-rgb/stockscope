@@ -603,12 +603,12 @@ def load_info(ticker: str) -> dict:
 
 @st.cache_data(ttl=600, show_spinner=False)
 def load_mini_batch(tickers: tuple[str, ...]) -> dict[str, dict]:
-    """Fetch 3-month daily data for a batch of tickers and compute summary stats."""
+    """Fetch 6-month daily data for a batch of tickers and compute summary stats + S/R."""
     if not tickers:
         return {}
     try:
         raw = yf.download(
-            list(tickers), period="3mo", interval="1d",
+            list(tickers), period="6mo", interval="1d",
             auto_adjust=False, progress=False, threads=True, group_by="ticker",
         )
     except Exception:
@@ -617,17 +617,20 @@ def load_mini_batch(tickers: tuple[str, ...]) -> dict[str, dict]:
     multi = isinstance(raw.columns, pd.MultiIndex)
     for t in tickers:
         try:
-            close = raw[t]["Close"].dropna() if multi else raw["Close"].dropna()
-            if len(close) < 3:
+            sub = raw[t] if multi else raw
+            close = sub["Close"].dropna()
+            if len(close) < 5:
                 continue
             last = float(close.iloc[-1])
+
             def chg(days: int) -> float:
                 if len(close) <= days:
                     return 0.0
                 return (last / float(close.iloc[-days - 1]) - 1) * 100
+
             w1 = chg(5)
             m1 = chg(21)
-            m3 = (last / float(close.iloc[0]) - 1) * 100
+            m3 = chg(63)
             r = float(rsi(close).iloc[-1])
             s20 = float(sma(close, 20).iloc[-1])
             s50 = float(sma(close, 50).iloc[-1]) if len(close) >= 30 else float("nan")
@@ -637,8 +640,23 @@ def load_mini_batch(tickers: tuple[str, ...]) -> dict[str, dict]:
                 sig = "bear"
             else:
                 sig = "flat"
-            out[t] = {"last": last, "w1": w1, "m1": m1, "m3": m3, "rsi": r, "sig": sig,
-                      "below_sma20": last < s20, "below_sma50": not np.isnan(s50) and last < s50}
+
+            # Compute nearest support / resistance from OHLC
+            ohlc = sub.dropna(subset=["High", "Low", "Close"])
+            s1 = r1 = None
+            if len(ohlc) >= 30:
+                lv = compute_levels(ohlc)
+                if lv["support"]:
+                    s1 = lv["support"][0]
+                if lv["resistance"]:
+                    r1 = lv["resistance"][0]
+
+            out[t] = {
+                "last": last, "w1": w1, "m1": m1, "m3": m3, "rsi": r, "sig": sig,
+                "below_sma20": last < s20,
+                "below_sma50": not np.isnan(s50) and last < s50,
+                "s1": s1, "r1": r1,
+            }
         except Exception:
             continue
     return out
@@ -778,6 +796,22 @@ PICKS: dict[str, dict] = {
             "NVDA", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "TSM", "ASML",
             "AVGO", "AMD", "QCOM", "LLY", "NVO", "UNH", "V", "MA",
             "NOW", "CRM", "ADBE", "ORCL", "PANW", "NFLX", "ARM", "COST", "JPM",
+        ],
+    },
+    "🎯 แตะโซนซื้อแล้ว": {
+        "desc": "หุ้นที่ราคาตอนนี้อยู่ใกล้แนวรับ S1 (รัศมี ±2.5%) · พร้อมพิจารณาเข้าซื้อ",
+        "mode": "auto_buyzone",
+        "universe": [
+            "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "BRK-B",
+            "AMD", "AVGO", "ASML", "TSM", "NFLX", "ORCL", "CRM", "ADBE",
+            "PANW", "NOW", "ARM", "PLTR", "SMCI", "QCOM", "INTC",
+            "IONQ", "RKLB", "ACHR", "SOFI", "HIMS", "RIOT", "COIN", "MSTR",
+            "JPM", "BAC", "GS", "V", "MA", "BLK",
+            "LLY", "UNH", "JNJ", "PFE", "MRK",
+            "XOM", "CVX", "COP",
+            "WMT", "COST", "MCD", "NKE", "SBUX",
+            "BA", "F", "GM", "DIS",
+            "BTC-USD", "ETH-USD", "SOL-USD",
         ],
     },
     "🚦 หุ้นซิ่ง": {
@@ -936,6 +970,24 @@ with st.sidebar:
                 (t, f"σ {abs(d['w1']):.1f}% · {_bias(d['sig'])}", None)
                 for t, d in candidates[:8]
             ]
+        elif mode == "auto_buyzone":
+            # Stocks currently within ±2.5% of their nearest support (S1)
+            candidates = []
+            for t, d in mini.items():
+                s1 = d.get("s1")
+                if not s1 or not d.get("last"):
+                    continue
+                dist = (d["last"] / s1 - 1) * 100  # positive = above support, negative = below
+                # In buy zone: -1% to +2.5% of S1 (touching or just above support)
+                if -1.0 <= dist <= 2.5:
+                    candidates.append((t, d, dist))
+            candidates.sort(key=lambda x: abs(x[2]))  # closest to S1 first
+            tickers_in_cat = [
+                (t, f"S1 {d['s1']:,.2f} · ห่าง {dist:+.1f}% · RSI {d['rsi']:.0f}", None)
+                for t, d, dist in candidates[:10]
+            ]
+            if not tickers_in_cat:
+                st.info("ตอนนี้ยังไม่มีหุ้นที่ราคาเข้าโซนซื้อ (รัศมี ±2.5% ของ S1)")
     else:
         tickers_in_cat = []
         show_meta = False
