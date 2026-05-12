@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 import yfinance as yf
 from deep_translator import GoogleTranslator
 from plotly.subplots import make_subplots
@@ -327,6 +328,33 @@ def bollinger(series: pd.Series, window: int = 20, n_std: float = 2.0):
     mid = sma(series, window)
     std = series.rolling(window=window, min_periods=1).std()
     return mid + n_std * std, mid, mid - n_std * std
+
+
+def to_tv_symbol(yf_sym: str) -> str:
+    """Convert Yahoo ticker → TradingView symbol format."""
+    s = yf_sym.upper().strip()
+    idx_map = {
+        "^GSPC": "SP:SPX", "^IXIC": "NASDAQ:IXIC", "^DJI": "DJ:DJI",
+        "^RUT": "TVC:RUT", "^VIX": "TVC:VIX", "^FTSE": "TVC:UKX",
+        "^N225": "TVC:NI225", "^HSI": "TVC:HSI",
+    }
+    if s in idx_map:
+        return idx_map[s]
+    if s.endswith("-USD"):
+        # Crypto — use Binance USDT pair (most liquid)
+        base = s.replace("-USD", "")
+        return f"BINANCE:{base}USDT"
+    if s.endswith(".BK"):
+        return f"SET:{s.replace('.BK', '')}"
+    # Default: US stock — let TV auto-resolve exchange
+    return s
+
+
+def to_tv_interval(yf_interval: str) -> str:
+    return {
+        "1m": "1", "5m": "5", "15m": "15", "30m": "30",
+        "1h": "60", "1d": "D", "1wk": "W", "1mo": "M",
+    }.get(yf_interval, "D")
 
 
 def compute_levels(df: pd.DataFrame, max_each: int = 3) -> dict:
@@ -765,13 +793,6 @@ with st.sidebar:
         help="1 นาที ใช้ได้กับข้อมูลย้อนหลังไม่เกิน 7 วัน",
     )
 
-    st.markdown('<div class="section-h">ตัวชี้วัด</div>', unsafe_allow_html=True)
-    show_sma = st.checkbox("เส้นค่าเฉลี่ย SMA 20 / 50 / 200", value=True)
-    show_bb = st.checkbox("แถบ Bollinger Bands", value=False)
-    show_volume = st.checkbox("ปริมาณซื้อขาย", value=True)
-    show_rsi = st.checkbox("RSI (14)", value=False)
-    show_macd = st.checkbox("MACD (12, 26, 9)", value=False)
-
     st.markdown('<div class="section-h">ตัวเลือก</div>', unsafe_allow_html=True)
     translate_news = st.checkbox("🌐 แปลข่าวเป็นภาษาไทย", value=True)
 
@@ -867,161 +888,46 @@ tab_chart, tab_stats, tab_news, tab_signal = st.tabs(
     ["📊 กราฟเทคนิค", "📋 สถิติ", "📰 ข่าว", "🎯 สัญญาณสรุป"]
 )
 
-# ---------- Chart ----------
+# ---------- Chart (TradingView widget) ----------
 with tab_chart:
-    rows = 1 + int(show_volume) + int(show_rsi) + int(show_macd)
-    if rows == 1:
-        heights = [1.0]
-    elif rows == 2:
-        heights = [0.78, 0.22]
-    elif rows == 3:
-        heights = [0.66, 0.17, 0.17]
-    else:
-        heights = [0.58, 0.14, 0.14, 0.14]
-    fig = make_subplots(
-        rows=rows,
-        cols=1,
-        shared_xaxes=True,
-        vertical_spacing=0.02,
-        row_heights=heights,
+    tv_symbol = to_tv_symbol(ticker)
+    tv_interval = to_tv_interval(interval)
+    tv_html = f"""
+    <div class="tradingview-widget-container" style="height:720px;width:100%">
+      <div id="tv_chart_container" style="height:100%;width:100%"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+      <script type="text/javascript">
+      new TradingView.widget({{
+          "autosize": true,
+          "symbol": "{tv_symbol}",
+          "interval": "{tv_interval}",
+          "timezone": "Asia/Bangkok",
+          "theme": "light",
+          "style": "1",
+          "locale": "th_TH",
+          "toolbar_bg": "#ffffff",
+          "enable_publishing": false,
+          "withdateranges": true,
+          "hide_side_toolbar": false,
+          "allow_symbol_change": true,
+          "save_image": true,
+          "details": false,
+          "calendar": false,
+          "studies": [
+              "MASimple@tv-basicstudies",
+              "Volume@tv-basicstudies"
+          ],
+          "container_id": "tv_chart_container"
+      }});
+      </script>
+    </div>
+    """
+    components.html(tv_html, height=740)
+    st.caption(
+        f"กราฟจาก TradingView · symbol = `{tv_symbol}` · "
+        "เพิ่ม indicators (RSI / MACD / Bollinger / Fibonacci) ได้ที่ไอคอน fx ด้านบน · "
+        "วาดเส้นแนวรับ/แนวต้านเองได้จากเครื่องมือซ้ายมือ"
     )
-
-    fig.add_trace(
-        go.Candlestick(
-            x=df.index,
-            open=df["Open"],
-            high=df["High"],
-            low=df["Low"],
-            close=df["Close"],
-            name="Price",
-            increasing_line_color="#16a34a",
-            decreasing_line_color="#dc2626",
-            increasing_fillcolor="#16a34a",
-            decreasing_fillcolor="#dc2626",
-        ),
-        row=1,
-        col=1,
-    )
-
-    if show_sma:
-        for w, color in [(20, "#d97706"), (50, "#2563eb"), (200, "#71717a")]:
-            if len(df) >= 2:
-                fig.add_trace(
-                    go.Scatter(x=df.index, y=sma(df["Close"], w), name=f"SMA{w}", line=dict(width=1, color=color)),
-                    row=1,
-                    col=1,
-                )
-
-    if show_bb:
-        upper, mid, lower = bollinger(df["Close"])
-        fig.add_trace(go.Scatter(x=df.index, y=upper, name="BB Upper", line=dict(width=1, color="rgba(113,113,122,0.5)")), row=1, col=1)
-        fig.add_trace(go.Scatter(x=df.index, y=lower, name="BB Lower", line=dict(width=1, color="rgba(113,113,122,0.5)"), fill="tonexty", fillcolor="rgba(113,113,122,0.06)"), row=1, col=1)
-        fig.add_trace(go.Scatter(x=df.index, y=mid, name="BB Mid", line=dict(width=1, dash="dot", color="rgba(113,113,122,0.7)")), row=1, col=1)
-
-    levels = compute_levels(df)
-    _support = levels["support"]
-    _resistance = levels["resistance"]
-    _current = levels["current"]
-
-    def _price_tag(y: float, color: str, text: str, weight: str = "normal"):
-        """Add a thin horizontal line with a small price tag on the right edge."""
-        fig.add_hline(
-            y=y, line_color=color, line_width=1.2, opacity=0.7,
-            annotation_text=f" {text} ",
-            annotation_position="right",
-            annotation_xanchor="left",
-            annotation_font=dict(color="#ffffff", size=10, family="JetBrains Mono"),
-            annotation_bgcolor=color,
-            annotation_bordercolor=color,
-            annotation_borderpad=3,
-            row=1, col=1,
-        )
-
-    # Resistance — red, top to bottom: R1 nearest, R3 farthest
-    for i, r in enumerate(_resistance):
-        _price_tag(r, "#dc2626", f"R{i+1}  {r:,.2f}")
-
-    # Support — green
-    for i, s in enumerate(_support):
-        _price_tag(s, "#15803d", f"S{i+1}  {s:,.2f}")
-
-    # Stop Loss — orange
-    _stop = None
-    if len(_support) >= 2:
-        _stop = _support[1] * 0.98
-    elif len(_support) == 1:
-        _stop = _support[0] * 0.96
-    if _stop is not None:
-        _price_tag(_stop, "#ea580c", f"SL  {_stop:,.2f}")
-
-    # Current price tag — slate, slightly bolder
-    fig.add_hline(
-        y=_current, line_color="#475569", line_width=1.3, opacity=0.85,
-        annotation_text=f" {_current:,.2f} ",
-        annotation_position="right",
-        annotation_xanchor="left",
-        annotation_font=dict(color="#ffffff", size=11, family="JetBrains Mono"),
-        annotation_bgcolor="#0f172a",
-        annotation_bordercolor="#0f172a",
-        annotation_borderpad=4,
-        row=1, col=1,
-    )
-
-    r = 2
-    if show_volume and "Volume" in df:
-        colors = ["#16a34a" if c >= o else "#dc2626" for c, o in zip(df["Close"], df["Open"])]
-        fig.add_trace(go.Bar(x=df.index, y=df["Volume"], name="Volume", marker_color=colors, opacity=0.6), row=r, col=1)
-        fig.update_yaxes(title_text="Vol", row=r, col=1)
-        r += 1
-
-    if show_rsi:
-        r_series = rsi(df["Close"])
-        fig.add_trace(go.Scatter(x=df.index, y=r_series, name="RSI", line=dict(color="#6366f1", width=1.3)), row=r, col=1)
-        fig.add_hline(y=70, line_dash="dash", line_color="#dc2626", line_width=1, row=r, col=1)
-        fig.add_hline(y=30, line_dash="dash", line_color="#16a34a", line_width=1, row=r, col=1)
-        fig.update_yaxes(title_text="RSI", range=[0, 100], row=r, col=1)
-        r += 1
-
-    if show_macd:
-        macd_line, signal_line, hist = macd(df["Close"])
-        fig.add_trace(go.Scatter(x=df.index, y=macd_line, name="MACD", line=dict(color="#2563eb", width=1.3)), row=r, col=1)
-        fig.add_trace(go.Scatter(x=df.index, y=signal_line, name="Signal", line=dict(color="#d97706", width=1.3)), row=r, col=1)
-        hist_colors = ["#16a34a" if v >= 0 else "#dc2626" for v in hist]
-        fig.add_trace(go.Bar(x=df.index, y=hist, name="Hist", marker_color=hist_colors, opacity=0.7), row=r, col=1)
-        fig.update_yaxes(title_text="MACD", row=r, col=1)
-
-    fig.update_layout(
-        height=720,
-        xaxis_rangeslider_visible=False,
-        showlegend=True,
-        margin=dict(l=10, r=90, t=20, b=10),
-        template="plotly_white",
-        hovermode="x unified",
-        paper_bgcolor="#ffffff",
-        plot_bgcolor="#ffffff",
-        font=dict(family="Inter, sans-serif", color="#64748b", size=10),
-        legend=dict(
-            orientation="h", yanchor="bottom", y=1.005, xanchor="left", x=0,
-            bgcolor="rgba(255,255,255,0)", font=dict(size=10, color="#64748b"),
-            itemwidth=30,
-        ),
-        hoverlabel=dict(
-            bgcolor="#ffffff", bordercolor="#e2e8f0",
-            font=dict(family="JetBrains Mono", size=11, color="#0f172a"),
-        ),
-        dragmode="pan",
-    )
-    fig.update_xaxes(
-        gridcolor="#f1f5f9", zerolinecolor="#e2e8f0", linecolor="#e2e8f0",
-        showspikes=True, spikemode="across", spikethickness=1,
-        spikecolor="#94a3b8", spikedash="dot", spikesnap="cursor",
-    )
-    fig.update_yaxes(
-        gridcolor="#f1f5f9", zerolinecolor="#e2e8f0", linecolor="#e2e8f0",
-        showspikes=True, spikemode="across", spikethickness=1,
-        spikecolor="#94a3b8", spikedash="dot",
-    )
-    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "scrollZoom": True})
 
 # ---------- Stats ----------
 with tab_stats:
