@@ -292,6 +292,91 @@ st.markdown(
     /* Hide default streamlit footer */
     footer { visibility: hidden; }
     #MainMenu { visibility: hidden; }
+
+    /* ========== Mobile (≤ 768px) ========== */
+    @media (max-width: 768px) {
+        /* Stack all column layouts vertically on mobile */
+        [data-testid="stHorizontalBlock"] {
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+        }
+        [data-testid="column"] {
+            width: 100% !important;
+            min-width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+
+        /* Tighter page padding */
+        .block-container {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            padding-top: 0.75rem !important;
+        }
+
+        /* Hero — smaller, less padding */
+        .hero {
+            padding: 1.1rem 1.2rem;
+            border-radius: 14px;
+        }
+        .hero .name  { font-size: 1.3rem; }
+        .hero .price { font-size: 2.1rem; }
+        .hero .sym   { font-size: 0.72rem; }
+        .hero .meta  { font-size: 0.78rem; }
+        .hero .chip  { font-size: 0.8rem; padding: 0.28rem 0.65rem; }
+
+        /* Stat tiles — slightly smaller */
+        .tile { padding: 0.75rem 0.9rem; border-radius: 12px; }
+        .tile .label { font-size: 0.66rem; }
+        .tile .value { font-size: 1.1rem; }
+
+        /* Tabs — horizontal scroll if needed, smaller text */
+        .stTabs [data-baseweb="tab-list"] {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            padding: 0.25rem;
+            border-radius: 10px;
+        }
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.45rem 0.8rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* News card */
+        .news-card { padding: 0.85rem 0.95rem; border-radius: 12px; }
+        .news-card .title { font-size: 0.95rem; }
+        .news-card .summary { font-size: 0.85rem; }
+
+        /* Verdict */
+        .verdict { padding: 1.1rem 1.2rem; font-size: 1.15rem; border-radius: 14px; }
+
+        /* Level tile */
+        .level-tile { padding: 0.8rem 0.95rem; border-radius: 12px; }
+        .level-tile .price { font-size: 1.1rem; }
+
+        /* Pick card */
+        .pick-card { padding: 0.8rem 0.9rem; }
+        .pick-card .price { font-size: 1.2rem; }
+
+        /* TradingView widget — slightly shorter on mobile */
+        .tradingview-widget-container { height: 520px !important; }
+        [data-testid="stIFrame"] iframe { height: 540px !important; }
+        iframe[title="streamlit_app"] { height: 540px !important; }
+
+        /* Section heading bigger touch target spacing */
+        .section-h { margin: 1rem 0 0.4rem 0; }
+
+        /* Disclaim card */
+        .pick-disclaim { font-size: 0.78rem; padding: 0.65rem 0.8rem; }
+    }
+
+    /* ========== Tablet (769-1024px) — 2-column compromise ========== */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .hero .price { font-size: 2.3rem; }
+        .hero .name  { font-size: 1.5rem; }
+        .tile .value { font-size: 1.15rem; }
+    }
     </style>
     """,
     unsafe_allow_html=True,
