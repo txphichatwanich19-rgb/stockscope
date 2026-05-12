@@ -1,6 +1,7 @@
 """แดชบอร์ดหุ้นเรียลไทม์ — วิเคราะห์เทคนิค + ข่าว (แปลไทย) + ไอเดียลงทุน"""
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 import numpy as np
@@ -663,6 +664,53 @@ def load_mini_batch(tickers: tuple[str, ...]) -> dict[str, dict]:
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
+def load_info_batch(tickers: tuple[str, ...]) -> dict[str, dict]:
+    """Fetch fundamental info for multiple tickers in parallel. Cached 1 hour."""
+    def _fetch(t: str) -> tuple[str, dict]:
+        try:
+            info = yf.Ticker(t).info or {}
+            return t, {
+                "name": info.get("longName") or info.get("shortName") or t,
+                "sector": info.get("sector"),
+                "industry": info.get("industry"),
+                "market_cap": info.get("marketCap"),
+                "rev_growth": info.get("revenueGrowth"),         # % decimal
+                "earnings_growth": info.get("earningsGrowth"),   # % decimal
+                "profit_margin": info.get("profitMargins"),      # % decimal
+                "roe": info.get("returnOnEquity"),
+                "pe": info.get("trailingPE"),
+                "forward_pe": info.get("forwardPE"),
+                "rec_key": info.get("recommendationKey"),
+                "rec_mean": info.get("recommendationMean"),      # 1 = strong buy, 5 = strong sell
+                "rec_count": info.get("numberOfAnalystOpinions"),
+                "target_mean": info.get("targetMeanPrice"),
+                "current": info.get("currentPrice") or info.get("regularMarketPrice"),
+            }
+        except Exception:
+            return t, {}
+
+    if not tickers:
+        return {}
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        results = list(ex.map(_fetch, tickers))
+    return dict(results)
+
+
+def _rec_thai(key: str | None, mean: float | None) -> str:
+    if mean is not None:
+        if mean <= 1.5: return "🟢 Strong Buy"
+        if mean <= 2.5: return "🟢 Buy"
+        if mean <= 3.5: return "🟡 Hold"
+        if mean <= 4.5: return "🔴 Sell"
+        return "🔴 Strong Sell"
+    if key:
+        return {"strong_buy": "🟢 Strong Buy", "buy": "🟢 Buy",
+                "hold": "🟡 Hold", "sell": "🔴 Sell",
+                "strong_sell": "🔴 Strong Sell"}.get(key, "—")
+    return "—"
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
 def translate_th(text: str) -> str:
     text = (text or "").strip()
     if not text:
@@ -790,12 +838,21 @@ PICKS: dict[str, dict] = {
         ],
     },
     "🚀 หุ้นอนาคตไกล": {
-        "desc": "Megatrend leaders · สแกนสดจาก universe 25 ตัว · เรียงตาม performance 3 เดือน",
+        "desc": "Quality megatrend leaders · กรองด้วยกำไร/รายได้โต/นักวิเคราะห์แนะนำซื้อ · เรียงด้วยคะแนนรวม",
         "mode": "auto_future",
         "universe": [
-            "NVDA", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "TSM", "ASML",
-            "AVGO", "AMD", "QCOM", "LLY", "NVO", "UNH", "V", "MA",
-            "NOW", "CRM", "ADBE", "ORCL", "PANW", "NFLX", "ARM", "COST", "JPM",
+            # AI / Cloud / Semi
+            "NVDA", "MSFT", "GOOGL", "AMZN", "META", "AVGO", "AMD", "ARM", "ASML", "TSM",
+            "AMAT", "KLAC", "LRCX", "MU", "QCOM", "ORCL", "CRM", "ADBE", "NOW", "PANW",
+            "CRWD", "SNPS", "CDNS", "INTU",
+            # Healthcare / Biotech leaders
+            "LLY", "NVO", "UNH", "ISRG", "VRTX", "REGN", "MRK", "ABBV",
+            # Financial leaders
+            "V", "MA", "JPM", "GS", "BLK", "AXP",
+            # Consumer / Platform leaders
+            "COST", "WMT", "MCD", "NKE", "BKNG", "MELI", "SHOP", "NFLX", "DIS",
+            # EV / Industrial
+            "TSLA", "CAT", "DE", "HON",
         ],
     },
     "🎯 แตะโซนซื้อแล้ว": {
@@ -930,7 +987,7 @@ with st.sidebar:
         tickers_in_cat = []
         if mode == "momentum":
             ranked = sorted([t for t in universe if t in mini],
-                            key=lambda t: mini[t]["w1"], reverse=True)[:8]
+                            key=lambda t: mini[t]["w1"], reverse=True)[:12]
             tickers_in_cat = [(t, f"1W {mini[t]['w1']:+.1f}% · RSI {mini[t]['rsi']:.0f}", None) for t in ranked]
         elif mode == "avoid":
             flagged = []
@@ -947,28 +1004,73 @@ with st.sidebar:
             if not tickers_in_cat:
                 st.info("ยังไม่มีตัวติดสัญญาณเตือน")
         elif mode == "auto_small_growth":
-            candidates = [
-                (t, d) for t, d in mini.items()
-                if d["rsi"] < 75 and not (d["below_sma20"] and d["below_sma50"])
-            ]
-            candidates.sort(key=lambda x: x[1]["m1"], reverse=True)
-            tickers_in_cat = [
-                (t, f"1M {d['m1']:+.1f}% · RSI {d['rsi']:.0f}", None)
-                for t, d in candidates[:8]
-            ]
+            with st.spinner("กำลังดึงข้อมูลพื้นฐาน…"):
+                fund = load_info_batch(tuple(universe))
+            scored = []
+            for t, d in mini.items():
+                if d["rsi"] >= 75 or (d["below_sma20"] and d["below_sma50"]):
+                    continue
+                f = fund.get(t, {})
+                rev_g = f.get("rev_growth") or 0
+                # For small caps: reward growth, accept negative margins (they're growing)
+                fund_score = (rev_g * 80)
+                analyst_score = (3.0 - (f.get("rec_mean") or 3.0)) * 12
+                total = d["m1"] + fund_score + analyst_score
+                scored.append((t, d, f, total))
+            scored.sort(key=lambda x: x[3], reverse=True)
+            tickers_in_cat = []
+            for t, d, f, _ in scored[:12]:
+                bits = [f"1M {d['m1']:+.1f}%"]
+                if f.get("rev_growth") is not None:
+                    bits.append(f"รายได้ {f['rev_growth']*100:+.0f}%")
+                bits.append(f"RSI {d['rsi']:.0f}")
+                if f.get("rec_mean"):
+                    bits.append(_rec_thai(f.get("rec_key"), f.get("rec_mean")))
+                tickers_in_cat.append((t, " · ".join(bits), None))
         elif mode == "auto_future":
-            candidates = sorted(mini.items(), key=lambda x: x[1]["m3"], reverse=True)
-            tickers_in_cat = [
-                (t, f"3M {d['m3']:+.1f}% · 1M {d['m1']:+.1f}%", None)
-                for t, d in candidates[:8]
-            ]
+            with st.spinner("กำลังดึงข้อมูลพื้นฐาน…"):
+                fund = load_info_batch(tuple(universe))
+            # Quality filter + composite score
+            scored = []
+            for t, d in mini.items():
+                f = fund.get(t, {})
+                rev_g = f.get("rev_growth") or 0
+                margin = f.get("profit_margin") or 0
+                rec_mean = f.get("rec_mean")  # 1=SB, 5=SS — lower is better
+                # Quality gate: at least one of: rev growth > 3%, margin > 10%, or analyst Buy
+                quality_pass = (
+                    rev_g > 0.03 or margin > 0.10
+                    or (rec_mean is not None and rec_mean <= 2.7)
+                )
+                if not quality_pass:
+                    continue
+                # Composite score
+                perf_score = d["m3"]                                      # 3-month return %
+                fund_score = (rev_g * 100) + (margin * 50)               # rewards growth + profitability
+                analyst_score = (3.0 - rec_mean) * 15 if rec_mean else 0  # buy=+15, hold=0, sell=-15
+                total = perf_score + fund_score + analyst_score
+                scored.append((t, d, f, total))
+            scored.sort(key=lambda x: x[3], reverse=True)
+            tickers_in_cat = []
+            for t, d, f, _score in scored[:12]:
+                bits = [f"3M {d['m3']:+.1f}%"]
+                if f.get("rev_growth") is not None:
+                    bits.append(f"รายได้ {f['rev_growth']*100:+.0f}%")
+                if f.get("profit_margin") is not None:
+                    bits.append(f"กำไรสุทธิ {f['profit_margin']*100:.0f}%")
+                if f.get("rec_mean"):
+                    bits.append(_rec_thai(f.get("rec_key"), f.get("rec_mean")))
+                if f.get("target_mean") and d.get("last"):
+                    upside = (f["target_mean"] / d["last"] - 1) * 100
+                    bits.append(f"🎯 เป้า {f['target_mean']:.0f} ({upside:+.0f}%)")
+                tickers_in_cat.append((t, " · ".join(bits), None))
         elif mode == "auto_options":
             def _bias(sig: str) -> str:
                 return {"bull": "📈 Call bias", "bear": "📉 Put bias", "flat": "⚪ Neutral"}[sig]
             candidates = sorted(mini.items(), key=lambda x: abs(x[1]["w1"]), reverse=True)
             tickers_in_cat = [
                 (t, f"σ {abs(d['w1']):.1f}% · {_bias(d['sig'])}", None)
-                for t, d in candidates[:8]
+                for t, d in candidates[:12]
             ]
         elif mode == "auto_buyzone":
             # Stocks currently within ±2.5% of their nearest support (S1)
