@@ -769,8 +769,8 @@ with st.sidebar:
     show_sma = st.checkbox("เส้นค่าเฉลี่ย SMA 20 / 50 / 200", value=True)
     show_bb = st.checkbox("แถบ Bollinger Bands", value=False)
     show_volume = st.checkbox("ปริมาณซื้อขาย", value=True)
-    show_rsi = st.checkbox("RSI (14)", value=True)
-    show_macd = st.checkbox("MACD (12, 26, 9)", value=True)
+    show_rsi = st.checkbox("RSI (14)", value=False)
+    show_macd = st.checkbox("MACD (12, 26, 9)", value=False)
 
     st.markdown('<div class="section-h">ตัวเลือก</div>', unsafe_allow_html=True)
     translate_news = st.checkbox("🌐 แปลข่าวเป็นภาษาไทย", value=True)
@@ -870,9 +870,14 @@ tab_chart, tab_stats, tab_news, tab_signal = st.tabs(
 # ---------- Chart ----------
 with tab_chart:
     rows = 1 + int(show_volume) + int(show_rsi) + int(show_macd)
-    heights = [0.55] + [0.15] * (rows - 1) if rows > 1 else [1.0]
-    # normalize
-    heights = [h / sum(heights) for h in heights]
+    if rows == 1:
+        heights = [1.0]
+    elif rows == 2:
+        heights = [0.78, 0.22]
+    elif rows == 3:
+        heights = [0.66, 0.17, 0.17]
+    else:
+        heights = [0.58, 0.14, 0.14, 0.14]
     fig = make_subplots(
         rows=rows,
         cols=1,
@@ -918,71 +923,47 @@ with tab_chart:
     _resistance = levels["resistance"]
     _current = levels["current"]
 
-    # Resistance lines (Sell zones) — red, solid/dashed/dotted by proximity
-    _res_styles = [
-        ("solid",  2.0, "🔴 ขาย 1 (R1)"),
-        ("dash",   1.6, "🔴 ขาย 2 (R2)"),
-        ("dot",    1.3, "🔴 ขาย 3 (R3)"),
-    ]
+    def _price_tag(y: float, color: str, text: str, weight: str = "normal"):
+        """Add a thin horizontal line with a small price tag on the right edge."""
+        fig.add_hline(
+            y=y, line_color=color, line_width=1.2, opacity=0.7,
+            annotation_text=f" {text} ",
+            annotation_position="right",
+            annotation_xanchor="left",
+            annotation_font=dict(color="#ffffff", size=10, family="JetBrains Mono"),
+            annotation_bgcolor=color,
+            annotation_bordercolor=color,
+            annotation_borderpad=3,
+            row=1, col=1,
+        )
+
+    # Resistance — red, top to bottom: R1 nearest, R3 farthest
     for i, r in enumerate(_resistance):
-        if i >= len(_res_styles):
-            break
-        style, width, label = _res_styles[i]
-        fig.add_hline(
-            y=r, line_dash=style, line_color="#dc2626", line_width=width, opacity=0.95,
-            annotation_text=f" {label} · {r:,.2f} ",
-            annotation_position="top left",
-            annotation_font=dict(color="#ffffff", size=11, family="Inter"),
-            annotation_bgcolor="#dc2626",
-            annotation_bordercolor="#dc2626",
-            row=1, col=1,
-        )
+        _price_tag(r, "#dc2626", f"R{i+1}  {r:,.2f}")
 
-    # Support lines (Buy zones) — green, solid/dashed/dotted
-    _sup_styles = [
-        ("solid",  2.0, "🟢 ซื้อ 1 (S1)"),
-        ("dash",   1.6, "🟢 ซื้อ 2 (S2)"),
-        ("dot",    1.3, "🟢 ซื้อ 3 (S3)"),
-    ]
+    # Support — green
     for i, s in enumerate(_support):
-        if i >= len(_sup_styles):
-            break
-        style, width, label = _sup_styles[i]
-        fig.add_hline(
-            y=s, line_dash=style, line_color="#15803d", line_width=width, opacity=0.95,
-            annotation_text=f" {label} · {s:,.2f} ",
-            annotation_position="bottom left",
-            annotation_font=dict(color="#ffffff", size=11, family="Inter"),
-            annotation_bgcolor="#15803d",
-            annotation_bordercolor="#15803d",
-            row=1, col=1,
-        )
+        _price_tag(s, "#15803d", f"S{i+1}  {s:,.2f}")
 
-    # Stop Loss line — orange, dashed
+    # Stop Loss — orange
     _stop = None
     if len(_support) >= 2:
         _stop = _support[1] * 0.98
     elif len(_support) == 1:
         _stop = _support[0] * 0.96
     if _stop is not None:
-        fig.add_hline(
-            y=_stop, line_dash="longdashdot", line_color="#ea580c", line_width=1.8, opacity=0.95,
-            annotation_text=f" 🛑 ตัดขาดทุน · {_stop:,.2f} ",
-            annotation_position="bottom left",
-            annotation_font=dict(color="#ffffff", size=11, family="Inter"),
-            annotation_bgcolor="#ea580c",
-            annotation_bordercolor="#ea580c",
-            row=1, col=1,
-        )
+        _price_tag(_stop, "#ea580c", f"SL  {_stop:,.2f}")
 
-    # Current price line — subtle gray
+    # Current price tag — slate, slightly bolder
     fig.add_hline(
-        y=_current, line_dash="dot", line_color="#52525b", line_width=1, opacity=0.6,
-        annotation_text=f" ราคาปัจจุบัน · {_current:,.2f} ",
-        annotation_position="top right",
-        annotation_font=dict(color="#ffffff", size=11, family="Inter"),
-        annotation_bgcolor="#52525b",
-        annotation_bordercolor="#52525b",
+        y=_current, line_color="#475569", line_width=1.3, opacity=0.85,
+        annotation_text=f" {_current:,.2f} ",
+        annotation_position="right",
+        annotation_xanchor="left",
+        annotation_font=dict(color="#ffffff", size=11, family="JetBrains Mono"),
+        annotation_bgcolor="#0f172a",
+        annotation_bordercolor="#0f172a",
+        annotation_borderpad=4,
         row=1, col=1,
     )
 
@@ -1013,20 +994,34 @@ with tab_chart:
         height=720,
         xaxis_rangeslider_visible=False,
         showlegend=True,
-        margin=dict(l=10, r=10, t=30, b=10),
+        margin=dict(l=10, r=90, t=20, b=10),
         template="plotly_white",
         hovermode="x unified",
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
-        font=dict(family="Inter, sans-serif", color="#475569", size=11),
+        font=dict(family="Inter, sans-serif", color="#64748b", size=10),
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
-            bgcolor="rgba(255,255,255,0)", font=dict(size=11, color="#475569"),
+            orientation="h", yanchor="bottom", y=1.005, xanchor="left", x=0,
+            bgcolor="rgba(255,255,255,0)", font=dict(size=10, color="#64748b"),
+            itemwidth=30,
         ),
+        hoverlabel=dict(
+            bgcolor="#ffffff", bordercolor="#e2e8f0",
+            font=dict(family="JetBrains Mono", size=11, color="#0f172a"),
+        ),
+        dragmode="pan",
     )
-    fig.update_xaxes(gridcolor="#f1f5f9", zerolinecolor="#e2e8f0", linecolor="#e2e8f0")
-    fig.update_yaxes(gridcolor="#f1f5f9", zerolinecolor="#e2e8f0", linecolor="#e2e8f0")
-    st.plotly_chart(fig, use_container_width=True)
+    fig.update_xaxes(
+        gridcolor="#f1f5f9", zerolinecolor="#e2e8f0", linecolor="#e2e8f0",
+        showspikes=True, spikemode="across", spikethickness=1,
+        spikecolor="#94a3b8", spikedash="dot", spikesnap="cursor",
+    )
+    fig.update_yaxes(
+        gridcolor="#f1f5f9", zerolinecolor="#e2e8f0", linecolor="#e2e8f0",
+        showspikes=True, spikemode="across", spikethickness=1,
+        spikecolor="#94a3b8", spikedash="dot",
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "scrollZoom": True})
 
 # ---------- Stats ----------
 with tab_stats:
