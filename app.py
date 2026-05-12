@@ -279,39 +279,104 @@ st.markdown(
         box-shadow: 0 1px 2px rgba(146,64,14,0.05);
     }
 
-    /* Level pills bar (above chart) */
-    .lv-bar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-bottom: 0.6rem;
+    /* Price ladder (above chart) */
+    .lv-ladder {
+        background: #ffffff;
+        border: 1px solid rgba(15,23,42,0.06);
+        border-radius: 14px;
+        padding: 0.85rem 1rem;
+        margin-bottom: 0.7rem;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.03);
     }
-    .lv-pill {
-        display: inline-flex;
+    .lv-row {
+        display: flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0.85rem;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        padding: 0.35rem 0;
+    }
+    .lv-arrow {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #64748b;
+        min-width: 145px;
+        flex-shrink: 0;
+    }
+    .lv-row-up .lv-arrow { color: #b91c1c; }
+    .lv-row-down .lv-arrow { color: #166534; }
+    .lv-pills { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+    .lv-empty { font-size: 0.82rem; color: #94a3b8; font-style: italic; }
+
+    .lv-pill {
+        display: inline-flex; align-items: baseline; gap: 0.5rem;
+        padding: 0.4rem 0.75rem;
         border-radius: 999px;
         border: 1px solid;
-        font-size: 0.88rem;
-        font-weight: 500;
-        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+        font-size: 0.85rem;
     }
+    .lv-pill.lv-sell { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+    .lv-pill.lv-buy  { background: #f0fdf4; color: #166534; border-color: #a7f3d0; }
+    .lv-pill.lv-stop { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
     .lv-pill .lv-role {
         font-weight: 600;
-        font-size: 0.82rem;
+        font-size: 0.8rem;
     }
     .lv-pill .lv-price {
         font-family: 'JetBrains Mono', monospace;
         font-weight: 700;
-        font-size: 0.95rem;
+        font-size: 0.92rem;
+        font-variant-numeric: tabular-nums;
+    }
+    .lv-pill .lv-delta {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.74rem;
+        opacity: 0.7;
         font-variant-numeric: tabular-nums;
     }
 
+    /* Now row — prominent center */
+    .lv-now {
+        display: flex; align-items: center; gap: 0.8rem;
+        padding: 0.7rem 0.85rem;
+        margin: 0.4rem 0;
+        background: linear-gradient(90deg, #f1f5f9 0%, #ffffff 50%, #f1f5f9 100%);
+        border-top: 1px solid rgba(15,23,42,0.06);
+        border-bottom: 1px solid rgba(15,23,42,0.06);
+        border-radius: 8px;
+    }
+    .lv-now-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #64748b;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        min-width: 145px;
+    }
+    .lv-now-price {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f172a;
+        letter-spacing: -0.01em;
+        font-variant-numeric: tabular-nums;
+    }
+    .lv-now-tag {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #16a34a;
+        background: #f0fdf4;
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+        letter-spacing: 0.04em;
+    }
+
     @media (max-width: 768px) {
-        .lv-pill { padding: 0.4rem 0.7rem; font-size: 0.8rem; }
-        .lv-pill .lv-price { font-size: 0.88rem; }
-        .lv-pill .lv-role { font-size: 0.76rem; }
+        .lv-arrow, .lv-now-label { min-width: auto; width: 100%; }
+        .lv-pill { padding: 0.35rem 0.65rem; font-size: 0.78rem; }
+        .lv-pill .lv-price { font-size: 0.84rem; }
+        .lv-pill .lv-role { font-size: 0.74rem; }
+        .lv-pill .lv-delta { font-size: 0.68rem; }
+        .lv-now-price { font-size: 1.2rem; }
     }
 
     /* Section heading */
@@ -1010,39 +1075,64 @@ tab_chart, tab_stats, tab_news, tab_signal = st.tabs(
 
 # ---------- Chart (TradingView widget) ----------
 with tab_chart:
-    # Quick levels banner above chart
+    # Quick levels banner above chart — 3 rows: sell zones / current / buy zones
     _lv = compute_levels(df)
     _sup = _lv["support"]
     _res = _lv["resistance"]
+    _cur = _lv["current"]
     _stop_lv = None
     if len(_sup) >= 2:
         _stop_lv = _sup[1] * 0.98
     elif len(_sup) == 1:
         _stop_lv = _sup[0] * 0.96
 
-    def _lv_pill(role: str, price: float | None, color_bg: str, color_text: str, color_border: str) -> str:
+    def _lv_pill(role: str, price: float | None, kind: str) -> str:
         if price is None:
             return ""
+        delta = (price / _cur - 1) * 100
+        delta_str = f"{delta:+.1f}%"
         return (
-            f'<div class="lv-pill" style="background:{color_bg};color:{color_text};'
-            f'border-color:{color_border};">'
+            f'<div class="lv-pill lv-{kind}">'
             f'<span class="lv-role">{role}</span>'
             f'<span class="lv-price">{price:,.2f}</span>'
+            f'<span class="lv-delta">{delta_str}</span>'
             f'</div>'
         )
 
-    pills_html = '<div class="lv-bar">'
-    pills_html += _lv_pill("🟢 ซื้อ 1", _sup[0] if len(_sup) >= 1 else None, "#f0fdf4", "#166534", "#a7f3d0")
-    pills_html += _lv_pill("🟢 ซื้อ 2", _sup[1] if len(_sup) >= 2 else None, "#f0fdf4", "#166534", "#a7f3d0")
-    pills_html += _lv_pill("🛑 ตัดขาดทุน", _stop_lv, "#fff7ed", "#9a3412", "#fed7aa")
-    pills_html += _lv_pill("🔴 ขาย 1", _res[0] if len(_res) >= 1 else None, "#fef2f2", "#991b1b", "#fecaca")
-    pills_html += _lv_pill("🔴 ขาย 2", _res[1] if len(_res) >= 2 else None, "#fef2f2", "#991b1b", "#fecaca")
-    pills_html += _lv_pill("🔴 ขาย 3", _res[2] if len(_res) >= 3 else None, "#fef2f2", "#991b1b", "#fecaca")
-    pills_html += "</div>"
-    st.markdown(pills_html, unsafe_allow_html=True)
+    # Sell zones row (above current price)
+    sell_pills = ""
+    for i, r in enumerate(_res, 1):
+        sell_pills += _lv_pill(f"🔴 ขาย {i}", r, "sell")
+
+    # Buy zones + SL row (below current price)
+    buy_pills = ""
+    for i, s in enumerate(_sup, 1):
+        buy_pills += _lv_pill(f"🟢 ซื้อ {i}", s, "buy")
+    buy_pills += _lv_pill("🛑 ตัดขาดทุน", _stop_lv, "stop")
+
+    st.markdown(
+        f"""
+        <div class="lv-ladder">
+            <div class="lv-row lv-row-up">
+                <div class="lv-arrow">↑ ถ้าราคาขึ้นไปถึง</div>
+                <div class="lv-pills">{sell_pills or '<span class="lv-empty">— ไม่มีแนวต้านในข้อมูลที่มี —</span>'}</div>
+            </div>
+            <div class="lv-now">
+                <span class="lv-now-label">ราคาตอนนี้</span>
+                <span class="lv-now-price">{_cur:,.2f}</span>
+                <span class="lv-now-tag">● LIVE</span>
+            </div>
+            <div class="lv-row lv-row-down">
+                <div class="lv-arrow">↓ ถ้าราคาลงมาถึง</div>
+                <div class="lv-pills">{buy_pills or '<span class="lv-empty">— ไม่มีแนวรับในข้อมูลที่มี —</span>'}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.caption(
-        "💡 ในกราฟ TradingView คลิกเครื่องมือ **Horizontal Line** ทางซ้าย → "
-        "ป้อนราคาด้านบนเพื่อวาดเส้นแนวรับ/แนวต้านในกราฟเอง"
+        "📌 ทุกโซน = **เป้าหมายราคาที่ยังไม่ได้แตะ** · % คือระยะห่างจากราคาปัจจุบัน  ·  "
+        "💡 อยากเห็นเส้นในกราฟ คลิกเครื่องมือ **Horizontal Line** ทางซ้ายของ TradingView → ป้อนราคา"
     )
 
     tv_symbol = to_tv_symbol(ticker)
