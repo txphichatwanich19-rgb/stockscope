@@ -5,3 +5,4 @@ pandas>=2.2
 numpy>=1.26
 deep-translator>=1.11
 vaderSentiment>=3.3
+lxml>=5.0

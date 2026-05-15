@@ -720,6 +720,46 @@ def load_mini_batch(tickers: tuple[str, ...]) -> dict[str, dict]:
     return out
 
 
+@st.cache_data(ttl=900, show_spinner=False)
+def load_insider_trades(ticker: str) -> pd.DataFrame:
+    try:
+        df = yf.Ticker(ticker).insider_transactions
+        return df if df is not None else pd.DataFrame()
+    except Exception:
+        return pd.DataFrame()
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_upgrades(ticker: str) -> pd.DataFrame:
+    try:
+        df = yf.Ticker(ticker).upgrades_downgrades
+        return df if df is not None else pd.DataFrame()
+    except Exception:
+        return pd.DataFrame()
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_earnings_dates(ticker: str) -> pd.DataFrame:
+    try:
+        df = yf.Ticker(ticker).earnings_dates
+        return df if df is not None else pd.DataFrame()
+    except Exception:
+        return pd.DataFrame()
+
+
+def _classify_insider(text: str, transaction: str = "") -> str:
+    """Returns 'buy', 'sell', 'gift', or 'other'."""
+    t = (text or "") + " " + (transaction or "")
+    t = t.lower()
+    if any(w in t for w in ["sale", "sold", "sell"]):
+        return "sell"
+    if any(w in t for w in ["purchase", "buy", "bought", "acquired"]):
+        return "buy"
+    if "gift" in t:
+        return "gift"
+    return "other"
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_info_batch(tickers: tuple[str, ...]) -> dict[str, dict]:
     """Fetch fundamental info for multiple tickers in parallel. Cached 1 hour."""
@@ -1454,6 +1494,152 @@ with tab_stats:
                     name = o.get("name", "—")
                     title = o.get("title", "—")
                     st.markdown(f"• {name} — _{title}_")
+
+    # === Insider Transactions ===
+    insider_df = load_insider_trades(ticker)
+    if not insider_df.empty:
+        st.write("")
+        st.subheader("👥 การซื้อขายของคนใน (Insider Transactions)")
+        # Classify and aggregate
+        rows_3mo = []
+        cutoff = datetime.now().date()
+        for _, row in insider_df.iterrows():
+            try:
+                date_val = pd.to_datetime(row.get("Start Date")).date()
+                days_ago = (cutoff - date_val).days
+                if days_ago > 180:
+                    continue
+                kind = _classify_insider(row.get("Text", ""), row.get("Transaction", ""))
+                rows_3mo.append({
+                    "date": date_val, "name": row.get("Insider", "—"),
+                    "position": row.get("Position", "—"),
+                    "kind": kind, "shares": row.get("Shares", 0),
+                    "value": row.get("Value", 0) or 0,
+                    "text": row.get("Text", "—"),
+                })
+            except Exception:
+                continue
+
+        if rows_3mo:
+            buys = [r for r in rows_3mo if r["kind"] == "buy"]
+            sells = [r for r in rows_3mo if r["kind"] == "sell"]
+            buy_val = sum(r["value"] or 0 for r in buys)
+            sell_val = sum(r["value"] or 0 for r in sells)
+
+            sum_col1, sum_col2, sum_col3 = st.columns(3)
+            sum_col1.markdown(
+                tile(
+                    "ซื้อใน 6 เดือน",
+                    f"{len(buys)} ครั้ง · ${buy_val/1e6:.1f}M" if buy_val else f"{len(buys)} ครั้ง",
+                ),
+                unsafe_allow_html=True,
+            )
+            sum_col2.markdown(
+                tile(
+                    "ขายใน 6 เดือน",
+                    f"{len(sells)} ครั้ง · ${sell_val/1e6:.1f}M" if sell_val else f"{len(sells)} ครั้ง",
+                ),
+                unsafe_allow_html=True,
+            )
+            net = buy_val - sell_val
+            signal = "🟢 Net buying" if net > 0 else ("🔴 Net selling" if net < 0 else "⚪ Balanced")
+            sum_col3.markdown(tile("สรุป", signal), unsafe_allow_html=True)
+
+            st.write("")
+            with st.expander(f"ดูรายการทั้งหมด {len(rows_3mo)} รายการ (6 เดือนล่าสุด)"):
+                tbl = pd.DataFrame([
+                    {
+                        "วันที่": r["date"],
+                        "ประเภท": {"buy": "🟢 ซื้อ", "sell": "🔴 ขาย", "gift": "🎁 โอน", "other": "—"}[r["kind"]],
+                        "ผู้บริหาร": r["name"],
+                        "ตำแหน่ง": r["position"],
+                        "จำนวนหุ้น": f"{int(r['shares']):,}" if r["shares"] else "—",
+                        "มูลค่า": f"${r['value']:,.0f}" if r["value"] else "—",
+                        "รายละเอียด": r["text"][:60],
+                    } for r in rows_3mo
+                ])
+                st.dataframe(tbl, use_container_width=True, hide_index=True)
+
+    # === Earnings ===
+    ed = load_earnings_dates(ticker)
+    if not ed.empty:
+        st.write("")
+        st.subheader("📅 ผลประกอบการ (Earnings)")
+        now = pd.Timestamp.now(tz="UTC")
+        ed_indexed = ed.copy()
+        # Try to find the next upcoming (NaN Reported EPS = future)
+        future = ed_indexed[ed_indexed["Reported EPS"].isna()]
+        past = ed_indexed[ed_indexed["Reported EPS"].notna()].head(4)
+
+        ec1, ec2 = st.columns([1, 2])
+        with ec1:
+            if not future.empty:
+                next_date = future.index[-1]  # closest future
+                try:
+                    days_left = (next_date.tz_convert("UTC") - now).days
+                except Exception:
+                    days_left = None
+                est = future.iloc[-1].get("EPS Estimate")
+                st.markdown(f"**📅 ประกาศผลครั้งต่อไป**")
+                st.markdown(f"### {next_date.strftime('%d %b %Y')}")
+                if days_left is not None and days_left >= 0:
+                    st.caption(f"อีก {days_left} วัน")
+                if est and not pd.isna(est):
+                    st.caption(f"คาดการณ์ EPS: **{est:.2f}**")
+            else:
+                st.caption("ไม่มีข้อมูลวันประกาศครั้งต่อไป")
+        with ec2:
+            if not past.empty:
+                st.markdown("**ผลย้อนหลัง 4 ไตรมาส**")
+                hist_rows = []
+                beats = 0
+                for date, row in past.iterrows():
+                    surprise = row.get("Surprise(%)")
+                    if surprise is None or pd.isna(surprise):
+                        continue
+                    icon = "🟢" if surprise > 0 else ("🔴" if surprise < 0 else "⚪")
+                    if surprise > 0: beats += 1
+                    hist_rows.append({
+                        "ไตรมาส": date.strftime("%Y-%m"),
+                        "Estimate": f"{row['EPS Estimate']:.2f}" if not pd.isna(row['EPS Estimate']) else "—",
+                        "Reported": f"{row['Reported EPS']:.2f}",
+                        "Surprise": f"{icon} {surprise:+.1f}%",
+                    })
+                if hist_rows:
+                    st.dataframe(pd.DataFrame(hist_rows), use_container_width=True, hide_index=True)
+                    streak = f"{beats}/{len(hist_rows)}"
+                    st.caption(f"📊 ชนะ Estimate {streak} ไตรมาส")
+
+    # === Analyst upgrades / downgrades ===
+    ud = load_upgrades(ticker)
+    if not ud.empty:
+        st.write("")
+        st.subheader("📈 การปรับเป้าราคา / เรตติ้งโดยนักวิเคราะห์")
+        recent = ud.head(8)
+        ud_rows = []
+        for date, row in recent.iterrows():
+            action = row.get("priceTargetAction", "")
+            icon = "🟢" if "Raise" in str(action) else ("🔴" if "Lower" in str(action) else "⚪")
+            from_grade = row.get("FromGrade", "")
+            to_grade = row.get("ToGrade", "")
+            grade_change = f"{to_grade}" if from_grade == to_grade else f"{from_grade} → {to_grade}"
+            cur_pt = row.get("currentPriceTarget")
+            prior_pt = row.get("priorPriceTarget")
+            pt_str = f"${cur_pt:.0f}" if cur_pt and not pd.isna(cur_pt) else "—"
+            if prior_pt and cur_pt and prior_pt != cur_pt and not pd.isna(prior_pt):
+                pt_str = f"${prior_pt:.0f} → ${cur_pt:.0f}"
+            try:
+                date_str = pd.Timestamp(date).strftime("%Y-%m-%d")
+            except Exception:
+                date_str = str(date)
+            ud_rows.append({
+                "วันที่": date_str,
+                "สถาบัน": row.get("Firm", "—"),
+                "การกระทำ": f"{icon} {action or '—'}",
+                "เรตติ้ง": grade_change,
+                "เป้าราคา": pt_str,
+            })
+        st.dataframe(pd.DataFrame(ud_rows), use_container_width=True, hide_index=True)
 
     desc = info.get("longBusinessSummary")
     if desc:
