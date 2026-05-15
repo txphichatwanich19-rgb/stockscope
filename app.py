@@ -242,6 +242,92 @@ st.markdown(
     .brand .name { font-weight: 700; font-size: 1.1rem; color: #0f172a; letter-spacing: -0.02em; }
     .brand .sub  { font-size: 0.7rem; color: #64748b; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; }
 
+    /* Macro market bar (top of page) */
+    .macro-bar {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.5rem;
+        margin-bottom: 0.85rem;
+    }
+    .macro-tile {
+        background: #ffffff;
+        border: 1px solid rgba(15,23,42,0.06);
+        border-radius: 10px;
+        padding: 0.55rem 0.75rem;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.03);
+    }
+    .macro-label {
+        font-size: 0.68rem; font-weight: 600;
+        color: #64748b; letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    .macro-row {
+        display: flex; justify-content: space-between; align-items: baseline;
+        gap: 0.5rem; margin-top: 0.2rem;
+    }
+    .macro-price {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.95rem; font-weight: 700;
+        color: #0f172a;
+        font-variant-numeric: tabular-nums;
+    }
+    .macro-chip {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.72rem; font-weight: 600;
+        padding: 0.1rem 0.45rem; border-radius: 999px;
+        font-variant-numeric: tabular-nums;
+    }
+    .macro-chip.up   { background: #f0fdf4; color: #166534; }
+    .macro-chip.down { background: #fef2f2; color: #991b1b; }
+
+    @media (max-width: 768px) {
+        .macro-bar { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
+        .macro-price { font-size: 0.88rem; }
+        .macro-chip { font-size: 0.68rem; }
+    }
+
+    /* 52-week position gauge */
+    .pos52 {
+        background: #ffffff;
+        border: 1px solid rgba(15,23,42,0.06);
+        border-radius: 14px;
+        padding: 0.85rem 1.1rem;
+        margin-bottom: 0.7rem;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.03);
+    }
+    .pos52-head {
+        display: flex; justify-content: space-between;
+        align-items: baseline; margin-bottom: 0.5rem;
+    }
+    .pos52-title {
+        font-size: 0.78rem; font-weight: 600;
+        color: #64748b; letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pos52-pct {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700; font-size: 0.95rem;
+        color: #0f172a;
+        font-variant-numeric: tabular-nums;
+    }
+    .pos52-track {
+        position: relative; height: 10px;
+        background: linear-gradient(90deg, #fee2e2 0%, #fef3c7 50%, #d1fae5 100%);
+        border-radius: 999px; overflow: visible;
+    }
+    .pos52-marker {
+        position: absolute; top: 50%; transform: translate(-50%, -50%);
+        width: 18px; height: 18px; border-radius: 50%;
+        background: #0f172a; border: 3px solid #ffffff;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.25);
+    }
+    .pos52-ends {
+        display: flex; justify-content: space-between;
+        margin-top: 0.4rem; font-size: 0.78rem; color: #64748b;
+        font-family: 'JetBrains Mono', monospace;
+        font-variant-numeric: tabular-nums;
+    }
+
     /* Generic mini-chip (used for sentiment + small badges) */
     .mini-chip {
         display: inline-flex; align-items: center;
@@ -718,6 +804,61 @@ def load_mini_batch(tickers: tuple[str, ...]) -> dict[str, dict]:
         except Exception:
             continue
     return out
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def load_macro() -> dict:
+    """Fetch major index/yield/dollar levels for sidebar."""
+    syms = ["^GSPC", "^IXIC", "^VIX", "^TNX", "DX-Y.NYB"]
+    labels = {
+        "^GSPC": "S&P 500", "^IXIC": "Nasdaq",
+        "^VIX": "VIX", "^TNX": "10Y Yield", "DX-Y.NYB": "USD Index",
+    }
+    out = {}
+    try:
+        raw = yf.download(syms, period="5d", interval="1d",
+                          progress=False, threads=True, auto_adjust=False)
+    except Exception:
+        return {}
+    for s in syms:
+        try:
+            close = raw["Close"][s].dropna() if isinstance(raw.columns, pd.MultiIndex) else raw["Close"].dropna()
+            if len(close) >= 2:
+                last = float(close.iloc[-1])
+                pct = (last / float(close.iloc[-2]) - 1) * 100
+                out[s] = {"label": labels[s], "last": last, "pct": pct}
+        except Exception:
+            continue
+    return out
+
+
+def compute_risk_metrics(close: pd.Series) -> dict:
+    if len(close) < 30:
+        return {}
+    returns = close.pct_change().dropna()
+    if returns.empty:
+        return {}
+    vol_annual = float(returns.std() * (252 ** 0.5) * 100)
+    annual_return = float(returns.mean() * 252 * 100)
+    sharpe = annual_return / vol_annual if vol_annual else 0
+    rolling_max = close.cummax()
+    drawdown = (close - rolling_max) / rolling_max * 100
+    max_dd = float(drawdown.min())
+    return {
+        "vol": vol_annual,
+        "max_dd": max_dd,
+        "ann_return": annual_return,
+        "sharpe": sharpe,
+    }
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_quarterly_financials(ticker: str) -> pd.DataFrame:
+    try:
+        df = yf.Ticker(ticker).quarterly_income_stmt
+        return df if df is not None else pd.DataFrame()
+    except Exception:
+        return pd.DataFrame()
 
 
 @st.cache_data(ttl=900, show_spinner=False)
@@ -1251,6 +1392,24 @@ if df.empty:
     st.error(f"ไม่พบข้อมูลสำหรับ `{ticker}` — เช็ค ticker หรือเลือก interval/period ที่ Yahoo รองรับ")
     st.stop()
 
+# Macro market overview
+macro = load_macro()
+if macro:
+    macro_html = '<div class="macro-bar">'
+    for sym, d in macro.items():
+        cls = "up" if d["pct"] >= 0 else "down"
+        arrow = "▲" if d["pct"] >= 0 else "▼"
+        macro_html += (
+            f'<div class="macro-tile">'
+            f'<div class="macro-label">{d["label"]}</div>'
+            f'<div class="macro-row">'
+            f'<span class="macro-price">{d["last"]:,.2f}</span>'
+            f'<span class="macro-chip {cls}">{arrow} {d["pct"]:+.2f}%</span>'
+            f'</div></div>'
+        )
+    macro_html += "</div>"
+    st.markdown(macro_html, unsafe_allow_html=True)
+
 # Header
 name = info.get("longName") or info.get("shortName") or ticker
 last_close = float(df["Close"].iloc[-1])
@@ -1427,6 +1586,70 @@ with tab_chart:
 
 # ---------- Stats ----------
 with tab_stats:
+    # === 52-Week Position Gauge ===
+    w52_hi = info.get("fiftyTwoWeekHigh")
+    w52_lo = info.get("fiftyTwoWeekLow")
+    if w52_hi and w52_lo and w52_hi > w52_lo:
+        pos_pct = (last_close - w52_lo) / (w52_hi - w52_lo) * 100
+        pos_pct = max(0, min(100, pos_pct))
+        if pos_pct >= 80:
+            zone = "ใกล้จุดสูงสุด — ระวัง valuation"
+        elif pos_pct >= 60:
+            zone = "ช่วงบน — momentum ดี"
+        elif pos_pct >= 40:
+            zone = "ช่วงกลาง"
+        elif pos_pct >= 20:
+            zone = "ช่วงล่าง — น่าสนใจถ้าพื้นฐานดี"
+        else:
+            zone = "ใกล้จุดต่ำสุด — รอ confirm reversal"
+        st.markdown(
+            f"""
+            <div class="pos52">
+                <div class="pos52-head">
+                    <span class="pos52-title">📍 ตำแหน่งราคาใน 52 สัปดาห์</span>
+                    <span class="pos52-pct">{pos_pct:.0f}% · {zone}</span>
+                </div>
+                <div class="pos52-track">
+                    <div class="pos52-marker" style="left:{pos_pct}%;"></div>
+                </div>
+                <div class="pos52-ends">
+                    <span>ต่ำสุด {w52_lo:,.2f}</span>
+                    <span>ราคาตอนนี้ {last_close:,.2f}</span>
+                    <span>สูงสุด {w52_hi:,.2f}</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # === Risk Metrics ===
+    risk = compute_risk_metrics(df["Close"])
+    if risk:
+        st.markdown('<div class="section-h">⚠️ ความเสี่ยง & ผลตอบแทน (ในช่วงข้อมูล)</div>', unsafe_allow_html=True)
+        rc1, rc2, rc3, rc4 = st.columns(4)
+        beta_val = info.get("beta")
+        rc1.markdown(
+            tile("Beta (vs ตลาด)", f"{beta_val:.2f}" if beta_val else "—"),
+            unsafe_allow_html=True,
+        )
+        rc2.markdown(
+            tile("ความผันผวน/ปี", f"{risk['vol']:.1f}%"),
+            unsafe_allow_html=True,
+        )
+        rc3.markdown(
+            tile("Max Drawdown", f"{risk['max_dd']:.1f}%"),
+            unsafe_allow_html=True,
+        )
+        rc4.markdown(
+            tile("Sharpe Ratio", f"{risk['sharpe']:.2f}"),
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "📖 **Beta** > 1 = ผันผวนกว่าตลาด · **ผันผวน/ปี** = standard deviation รายปี · "
+            "**Max Drawdown** = ขาดทุนหนักสุดจาก peak · **Sharpe** = ผลตอบแทนเทียบความเสี่ยง (>1 ดี, >2 ยอดเยี่ยม)"
+        )
+        st.write("")
+
     def fmt(x, money=False, pct=False):
         if x is None or (isinstance(x, float) and np.isnan(x)):
             return "—"
@@ -1461,6 +1684,63 @@ with tab_stats:
         st.write(f"**อัตรากำไรสุทธิ:** {fmt(info.get('profitMargins'), pct=True)}")
         st.write(f"**ROE (ผลตอบแทนผู้ถือหุ้น):** {fmt(info.get('returnOnEquity'), pct=True)}")
         st.write(f"**การเติบโตรายได้:** {fmt(info.get('revenueGrowth'), pct=True)}")
+
+    # === Quarterly Revenue & Earnings chart ===
+    qf = load_quarterly_financials(ticker)
+    if not qf.empty:
+        try:
+            rows = ["Total Revenue", "Net Income"]
+            available = [r for r in rows if r in qf.index]
+            if available:
+                st.write("")
+                st.subheader("📊 รายได้ & กำไรรายไตรมาส (4 ไตรมาสล่าสุด)")
+                cols_q = list(qf.columns)[:4][::-1]  # oldest → newest
+                date_labels = [d.strftime("%Y Q%q").replace("Q%q", f"Q{((d.month-1)//3)+1}") for d in cols_q]
+
+                fig_q = go.Figure()
+                if "Total Revenue" in qf.index:
+                    rev_vals = [float(qf.at["Total Revenue", c]) / 1e9 for c in cols_q]
+                    fig_q.add_trace(go.Bar(
+                        name="รายได้", x=date_labels, y=rev_vals,
+                        marker_color="#3b82f6",
+                        text=[f"${v:.1f}B" for v in rev_vals], textposition="outside",
+                    ))
+                if "Net Income" in qf.index:
+                    ni_vals = [float(qf.at["Net Income", c]) / 1e9 for c in cols_q]
+                    fig_q.add_trace(go.Bar(
+                        name="กำไรสุทธิ", x=date_labels, y=ni_vals,
+                        marker_color="#10b981",
+                        text=[f"${v:.1f}B" for v in ni_vals], textposition="outside",
+                    ))
+
+                fig_q.update_layout(
+                    barmode="group", height=320,
+                    template="plotly_white",
+                    paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
+                    margin=dict(l=20, r=20, t=20, b=20),
+                    yaxis_title="พันล้านดอลลาร์ (USD)",
+                    font=dict(family="Inter, sans-serif", color="#475569", size=11),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                                xanchor="right", x=1, bgcolor="rgba(0,0,0,0)"),
+                )
+                fig_q.update_xaxes(gridcolor="#f1f5f9")
+                fig_q.update_yaxes(gridcolor="#f1f5f9", zerolinecolor="#cbd5e1")
+                st.plotly_chart(fig_q, use_container_width=True,
+                                config={"displaylogo": False})
+
+                # Growth annotations
+                if "Total Revenue" in qf.index and len(cols_q) >= 2:
+                    last_rev = float(qf.at["Total Revenue", cols_q[-1]])
+                    prev_rev = float(qf.at["Total Revenue", cols_q[-2]])
+                    qoq = (last_rev / prev_rev - 1) * 100 if prev_rev else 0
+                    cap_parts = [f"📈 รายได้ QoQ: **{qoq:+.1f}%**"]
+                    if len(cols_q) >= 4:
+                        yoy_rev = float(qf.at["Total Revenue", cols_q[0]])
+                        yoy = (last_rev / yoy_rev - 1) * 100 if yoy_rev else 0
+                        cap_parts.append(f"YoY (4Q): **{yoy:+.1f}%**")
+                    st.caption(" · ".join(cap_parts))
+        except Exception:
+            pass
 
     # CEO + Key Officers section
     officers = info.get("companyOfficers", []) or []
