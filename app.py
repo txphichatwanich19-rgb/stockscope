@@ -1127,6 +1127,43 @@ PICKS: dict[str, dict] = {
             "ARM", "SNOW", "CRWD", "ORCL", "UBER", "LYFT",
         ],
     },
+    "💎 หุ้นปันผลสูง": {
+        "desc": "หุ้นปันผล Yield > 3% และจ่ายปันผลแบบยั่งยืน (Payout < 85%) · เรียงตาม Yield สูงสุด",
+        "mode": "auto_dividend",
+        "universe": [
+            "VZ", "T", "MO", "PFE", "IBM", "XOM", "CVX", "KO", "PEP", "MMM",
+            "JNJ", "MRK", "ABBV", "BMY", "CSCO", "JPM", "BAC", "WFC", "USB",
+            "GE", "CAT", "MCD", "WBA", "TGT", "AMGN", "TXN", "AVGO",
+            "O", "SPG", "AMT", "PSA", "WELL",
+            "ED", "DUK", "SO", "NEE", "AEP",
+        ],
+    },
+    "💸 ผู้บริหารซื้อหุ้นเอง (Insider Buy)": {
+        "desc": "หุ้นที่ผู้บริหาร/Director ซื้อหุ้นบริษัทใน 6 เดือนล่าสุด · สัญญาณเชื่อมั่นจากคนใน",
+        "mode": "auto_insider_buy",
+        "universe": [
+            "AAPL", "MSFT", "NVDA", "META", "TSLA", "AMZN", "GOOGL",
+            "AMD", "AVGO", "PLTR", "SMCI", "SOFI", "HIMS", "MARA", "RIOT",
+            "COIN", "MSTR", "IONQ", "RKLB", "ACHR", "RIVN", "LCID",
+            "JPM", "BAC", "WFC", "GS",
+            "LLY", "UNH", "PFE", "JNJ", "MRK",
+            "XOM", "CVX", "BA", "F", "GM",
+        ],
+    },
+    "📉 หุ้น Oversold (RSI ต่ำ น่าเด้ง)": {
+        "desc": "หุ้น quality ที่ RSI < 35 (ขายมากเกินไป) · contrarian play · เรียง RSI ต่ำสุด",
+        "mode": "auto_oversold",
+        "universe": [
+            "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA",
+            "AMD", "AVGO", "QCOM", "TSM", "ASML", "ARM",
+            "ORCL", "CRM", "ADBE", "NOW", "PANW", "CRWD",
+            "JPM", "BAC", "GS", "V", "MA", "BLK",
+            "LLY", "UNH", "JNJ", "PFE", "MRK", "ABBV",
+            "WMT", "COST", "MCD", "NKE", "SBUX", "DIS",
+            "XOM", "CVX", "BA",
+            "VZ", "T", "PFE",
+        ],
+    },
     "🎰 Option Plays (Call / Put)": {
         "desc": "หุ้น option liquid · สแกนสด · เรียงตาม volatility ล่าสุด (abs 1W %) · bias จากสัญญาณเทคนิค",
         "mode": "auto_options",
@@ -1142,10 +1179,21 @@ PICKS: dict[str, dict] = {
 CATEGORIES: dict[str, list[str]] = {
     "🔥 หุ้นยักษ์ใหญ่": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK-B"],
     "💻 เทคโนโลยี": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AVGO", "ORCL", "CRM", "ADBE", "AMD", "INTC", "CSCO"],
+    "☁️ Cloud / SaaS": ["CRM", "NOW", "SNOW", "MDB", "DDOG", "NET", "OKTA", "PLTR", "WDAY", "ZS"],
+    "🔐 ไซเบอร์ซีเคียวริตี้": ["CRWD", "PANW", "FTNT", "ZS", "S", "TENB", "QLYS", "CHKP"],
+    "🤖 ชิป / Semiconductor": ["NVDA", "AMD", "AVGO", "TSM", "ASML", "AMAT", "KLAC", "LRCX", "MU", "QCOM", "ARM", "INTC"],
     "💰 การเงิน / ธนาคาร": ["JPM", "BAC", "WFC", "GS", "MS", "V", "MA", "BLK", "C", "AXP"],
     "🏥 สุขภาพ / ยา": ["JNJ", "UNH", "LLY", "PFE", "ABBV", "MRK", "TMO", "ABT", "DHR", "BMY"],
+    "🧬 Biotech": ["MRNA", "BNTX", "REGN", "VRTX", "GILD", "ALNY", "BMRN", "INCY", "BIIB"],
+    "🛡️ กลาโหม / การทหาร": ["LMT", "RTX", "NOC", "GD", "BA", "LHX", "HII", "TDG"],
     "⚡ พลังงาน": ["XOM", "CVX", "COP", "SLB", "OXY", "EOG", "PSX", "MPC"],
+    "🌱 พลังงานสะอาด": ["TSLA", "ENPH", "FSLR", "NEE", "BE", "PLUG", "RUN", "SEDG"],
+    "⛏️ ทอง / เหมืองแร่": ["GLD", "GOLD", "NEM", "AEM", "FCX", "WPM", "AU", "KGC"],
+    "🏠 อสังหา / REIT": ["AMT", "PLD", "EQIX", "WELL", "CCI", "PSA", "O", "SPG", "VICI"],
+    "📡 โทรคมนาคม": ["T", "VZ", "TMUS", "CMCSA", "CHTR"],
     "🛒 สินค้าอุปโภคบริโภค": ["AMZN", "WMT", "COST", "PG", "KO", "PEP", "MCD", "NKE", "SBUX", "TGT"],
+    "🍔 ร้านอาหาร / Food": ["MCD", "SBUX", "CMG", "YUM", "DPZ", "QSR", "WEN", "SHAK"],
+    "🎲 คาสิโน / Gambling": ["LVS", "MGM", "WYNN", "DKNG", "PENN", "CZR"],
     "🚗 รถยนต์ / EV": ["TSLA", "F", "GM", "RIVN", "LCID", "TM", "HMC", "STLA", "BYDDY"],
     "🎮 สื่อ / เกม": ["NFLX", "DIS", "SONY", "EA", "TTWO", "RBLX", "SPOT", "ROKU"],
     "✈️ สายการบิน / ท่องเที่ยว": ["DAL", "UAL", "AAL", "LUV", "BA", "BKNG", "ABNB", "MAR"],
@@ -1153,6 +1201,9 @@ CATEGORIES: dict[str, list[str]] = {
     "📊 ดัชนีตลาด": ["^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^FTSE", "^N225", "^HSI"],
     "🌐 กองทุน ETF": ["SPY", "QQQ", "VOO", "VTI", "IWM", "DIA", "ARKK", "GLD", "TLT"],
     "🇨🇳 หุ้นจีน (ADR)": ["BABA", "JD", "PDD", "NIO", "LI", "XPEV", "BIDU", "TME"],
+    "🇯🇵 หุ้นญี่ปุ่น (ADR)": ["TM", "SONY", "HMC", "NTT", "MUFG", "SMFG", "TAK"],
+    "🇮🇳 หุ้นอินเดีย (ADR)": ["INFY", "WIT", "HDB", "IBN", "TTM"],
+    "🇪🇺 หุ้นยุโรป (ADR)": ["ASML", "SAP", "NVO", "NVS", "SHEL", "RIO", "BP", "UL"],
     "🏦 หุ้นไทย (SET)": ["PTT.BK", "ADVANC.BK", "AOT.BK", "CPALL.BK", "KBANK.BK", "SCB.BK", "PTTEP.BK", "DELTA.BK"],
 }
 
@@ -1310,6 +1361,104 @@ with st.sidebar:
                 (t, f"σ {abs(d['w1']):.1f}% · {_bias(d['sig'])}", None)
                 for t, d in candidates[:12]
             ]
+        elif mode == "auto_dividend":
+            with st.spinner("กำลังดึงข้อมูลปันผล…"):
+                fund = load_info_batch(tuple(universe))
+            candidates = []
+            for t in universe:
+                f = fund.get(t, {})
+                yld = f.get("rev_growth")  # placeholder; we'll use info dict directly below
+                # Re-fetch direct from yfinance info would be too slow; use what's in fund
+                # info-level yields aren't in load_info_batch — need to extend OR fetch dividendYield separately
+                pass
+            # Fetch fresh info containing dividendYield (not in load_info_batch by default)
+            from yfinance import Ticker as _T
+            for t in universe:
+                try:
+                    inf = _T(t).info or {}
+                    yld = inf.get("dividendYield")
+                    payout = inf.get("payoutRatio") or 0
+                    if not yld or yld <= 0:
+                        continue
+                    # yfinance returns dividendYield as decimal (0.03 = 3%) or sometimes as percent
+                    yld_pct = yld * 100 if yld < 1 else yld
+                    if yld_pct < 3.0:
+                        continue
+                    if payout and payout > 0.85:
+                        continue
+                    last = mini.get(t, {}).get("last")
+                    candidates.append((t, yld_pct, payout, last))
+                except Exception:
+                    continue
+            candidates.sort(key=lambda x: x[1], reverse=True)
+            tickers_in_cat = []
+            for t, yld, payout, last in candidates[:12]:
+                bits = [f"Yield {yld:.2f}%"]
+                if payout:
+                    bits.append(f"จ่าย {payout*100:.0f}% ของกำไร")
+                if last:
+                    bits.append(f"ราคา {last:,.2f}")
+                tickers_in_cat.append((t, " · ".join(bits), None))
+            if not tickers_in_cat:
+                st.info("ไม่พบหุ้นปันผลที่ผ่านเกณฑ์")
+
+        elif mode == "auto_insider_buy":
+            with st.spinner("กำลังสแกน insider transactions…"):
+                from datetime import timedelta
+                cutoff_date = datetime.now().date() - timedelta(days=180)
+                scored = []
+                def _scan(t: str):
+                    try:
+                        idf = yf.Ticker(t).insider_transactions
+                        if idf is None or idf.empty:
+                            return t, 0, 0, 0
+                        buy_val = 0; buy_count = 0; sell_count = 0
+                        for _, row in idf.iterrows():
+                            try:
+                                d = pd.to_datetime(row.get("Start Date")).date()
+                                if d < cutoff_date:
+                                    continue
+                                kind = _classify_insider(row.get("Text", ""), row.get("Transaction", ""))
+                                if kind == "buy":
+                                    buy_val += row.get("Value", 0) or 0
+                                    buy_count += 1
+                                elif kind == "sell":
+                                    sell_count += 1
+                            except Exception:
+                                pass
+                        return t, buy_val, buy_count, sell_count
+                    except Exception:
+                        return t, 0, 0, 0
+                with ThreadPoolExecutor(max_workers=10) as ex:
+                    for t, buy_val, buy_c, sell_c in ex.map(_scan, universe):
+                        if buy_c > 0 and buy_c >= sell_c:  # net buying or balanced
+                            scored.append((t, buy_val, buy_c, sell_c))
+            scored.sort(key=lambda x: x[1], reverse=True)
+            tickers_in_cat = []
+            for t, buy_val, buy_c, sell_c in scored[:10]:
+                if buy_val > 0:
+                    bits = [f"ซื้อ {buy_c} ครั้ง · ${buy_val/1e6:.2f}M"]
+                else:
+                    bits = [f"ซื้อ {buy_c} ครั้ง"]
+                if sell_c > 0:
+                    bits.append(f"ขาย {sell_c} ครั้ง")
+                tickers_in_cat.append((t, " · ".join(bits), None))
+            if not tickers_in_cat:
+                st.info("ไม่พบหุ้นที่มี insider ซื้อใน 6 เดือนล่าสุด")
+
+        elif mode == "auto_oversold":
+            candidates = [
+                (t, d) for t, d in mini.items()
+                if d["rsi"] < 35
+            ]
+            candidates.sort(key=lambda x: x[1]["rsi"])
+            tickers_in_cat = [
+                (t, f"RSI {d['rsi']:.0f} · 1M {d['m1']:+.1f}% · 3M {d['m3']:+.1f}%", None)
+                for t, d in candidates[:12]
+            ]
+            if not tickers_in_cat:
+                st.info("ไม่มีหุ้นไหน Oversold ตอนนี้ (RSI < 35)")
+
         elif mode == "auto_buyzone":
             # Stocks currently within ±2.5% of their nearest support (S1)
             candidates = []
