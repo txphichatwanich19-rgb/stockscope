@@ -322,6 +322,46 @@ st.markdown(
         .macro-chip { font-size: 0.68rem; }
     }
 
+    /* Top movers grid */
+    .mover-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.45rem;
+        margin-bottom: 0.55rem;
+    }
+    .mover-cell {
+        background: #ffffff;
+        border: 1px solid rgba(15,23,42,0.06);
+        border-radius: 10px;
+        padding: 0.55rem 0.7rem;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.03);
+    }
+    .mover-cell.mover-up   { border-left: 3px solid #16a34a; }
+    .mover-cell.mover-down { border-left: 3px solid #dc2626; }
+    .mover-sym {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700; font-size: 0.82rem;
+        color: #0f172a;
+    }
+    .mover-pct {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700; font-size: 0.95rem;
+        margin-top: 0.25rem;
+        font-variant-numeric: tabular-nums;
+    }
+    .mover-up .mover-pct   { color: #15803d; }
+    .mover-down .mover-pct { color: #b91c1c; }
+    .mover-price {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.78rem;
+        color: #64748b;
+        margin-top: 0.1rem;
+        font-variant-numeric: tabular-nums;
+    }
+    @media (max-width: 768px) {
+        .mover-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
     /* Sector heatmap grid */
     .sector-grid {
         display: grid;
@@ -897,6 +937,30 @@ def load_usdthb() -> float | None:
     return None
 
 
+@st.cache_data(ttl=180, show_spinner=False)
+def load_daily_movers(tickers: tuple[str, ...]) -> list[dict]:
+    """Return list of {sym, last, d1} sorted ready to use."""
+    if not tickers:
+        return []
+    try:
+        raw = yf.download(list(tickers), period="5d", interval="1d",
+                          progress=False, threads=True, auto_adjust=False)
+    except Exception:
+        return []
+    out = []
+    multi = isinstance(raw.columns, pd.MultiIndex)
+    for t in tickers:
+        try:
+            close = raw["Close"][t].dropna() if multi else raw["Close"].dropna()
+            if len(close) >= 2:
+                last = float(close.iloc[-1])
+                d1 = (last / float(close.iloc[-2]) - 1) * 100
+                out.append({"sym": t, "last": last, "d1": d1})
+        except Exception:
+            continue
+    return out
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def load_sector_heatmap() -> list[dict]:
     """11 SPDR sector ETFs + their 1D / 5D / 1M change."""
@@ -1335,7 +1399,7 @@ if "category" not in st.session_state:
 if "watchlist" not in st.session_state:
     st.session_state.watchlist = []
 if "page" not in st.session_state:
-    st.session_state.page = "📊 ดูหุ้น"
+    st.session_state.page = "🌐 ภาพรวมตลาด"
 
 with st.sidebar:
     st.markdown(
@@ -1352,10 +1416,10 @@ with st.sidebar:
     )
 
     # Page navigation
+    PAGES = ["🌐 ภาพรวมตลาด", "📊 ดูหุ้น", "🔍 สแกนหุ้น"]
     page = st.radio(
-        "หน้า",
-        ["📊 ดูหุ้น", "🌐 ภาพรวมตลาด", "🔍 สแกนหุ้น"],
-        index=["📊 ดูหุ้น", "🌐 ภาพรวมตลาด", "🔍 สแกนหุ้น"].index(st.session_state.page),
+        "หน้า", PAGES,
+        index=PAGES.index(st.session_state.page) if st.session_state.page in PAGES else 0,
         label_visibility="collapsed",
     )
     st.session_state.page = page
@@ -1891,9 +1955,89 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
                 st.rerun()
     else:
         st.info("ไม่สามารถโหลดข้อมูล sector ได้")
-    # Bonus: top movers info
+
+    # === Top Daily Movers ===
     st.write("")
-    st.caption("💡 อยากดูหุ้นใน sector ไหน เลือกหมวดใน sidebar (☁️ Cloud / 🔐 ไซเบอร์ / 🤖 ชิป ฯลฯ)")
+    st.markdown("### 📈 Top Movers วันนี้")
+    POPULAR_UNIVERSE = (
+        "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO",
+        "AMD", "QCOM", "TSM", "ASML", "ARM", "ORCL", "CRM", "ADBE", "NOW",
+        "PANW", "CRWD", "SNOW", "PLTR", "SMCI", "NFLX", "DIS",
+        "JPM", "BAC", "GS", "V", "MA",
+        "LLY", "UNH", "JNJ", "PFE",
+        "XOM", "CVX", "WMT", "COST", "MCD",
+        "COIN", "MSTR", "IONQ", "RKLB", "HIMS", "SOFI",
+        "BTC-USD", "ETH-USD",
+    )
+    with st.spinner("กำลังโหลด Top Movers…"):
+        movers = load_daily_movers(POPULAR_UNIVERSE)
+    if movers:
+        gainers = sorted(movers, key=lambda x: x["d1"], reverse=True)[:8]
+        losers = sorted(movers, key=lambda x: x["d1"])[:8]
+
+        def _mover_html(items: list[dict], cls: str) -> str:
+            html = '<div class="mover-grid">'
+            for m in items:
+                arrow = "▲" if m["d1"] >= 0 else "▼"
+                html += (
+                    f'<div class="mover-cell mover-{cls}">'
+                    f'<div class="mover-sym">{m["sym"]}</div>'
+                    f'<div class="mover-pct">{arrow} {m["d1"]:+.2f}%</div>'
+                    f'<div class="mover-price">{m["last"]:,.2f}</div>'
+                    f'</div>'
+                )
+            html += "</div>"
+            return html
+
+        mc1, mc2 = st.columns(2)
+        with mc1:
+            st.markdown("**🟢 ราคาขึ้นมากที่สุด**")
+            st.markdown(_mover_html(gainers, "up"), unsafe_allow_html=True)
+        with mc2:
+            st.markdown("**🔴 ราคาลงมากที่สุด**")
+            st.markdown(_mover_html(losers, "down"), unsafe_allow_html=True)
+
+        # Quick-pick buttons for gainers
+        st.write("")
+        st.caption("คลิกเพื่อดูรายละเอียดเต็ม:")
+        pick_g = st.columns(8)
+        for i, m in enumerate(gainers):
+            if pick_g[i].button(m["sym"], key=f"mover_g_{m['sym']}", use_container_width=True):
+                st.session_state.ticker = m["sym"]
+                st.session_state.page = "📊 ดูหุ้น"
+                st.rerun()
+
+    # === Watchlist summary ===
+    if st.session_state.watchlist:
+        st.write("")
+        st.markdown("### ⭐ Watchlist ของคุณ")
+        with st.spinner("กำลังโหลด watchlist…"):
+            wl_data = load_daily_movers(tuple(st.session_state.watchlist))
+        if wl_data:
+            wl_html = '<div class="mover-grid">'
+            for m in wl_data:
+                cls = "up" if m["d1"] >= 0 else "down"
+                arrow = "▲" if m["d1"] >= 0 else "▼"
+                wl_html += (
+                    f'<div class="mover-cell mover-{cls}">'
+                    f'<div class="mover-sym">{m["sym"]}</div>'
+                    f'<div class="mover-pct">{arrow} {m["d1"]:+.2f}%</div>'
+                    f'<div class="mover-price">{m["last"]:,.2f}</div>'
+                    f'</div>'
+                )
+            wl_html += "</div>"
+            st.markdown(wl_html, unsafe_allow_html=True)
+            # Quick-pick
+            wl_cols = st.columns(min(8, len(wl_data)))
+            for i, m in enumerate(wl_data[:8]):
+                if wl_cols[i].button(m["sym"], key=f"wl_pick_{m['sym']}", use_container_width=True):
+                    st.session_state.ticker = m["sym"]
+                    st.session_state.page = "📊 ดูหุ้น"
+                    st.rerun()
+    else:
+        st.write("")
+        st.info("⭐ ยังไม่มี Watchlist · ไปดูหุ้นรายตัวแล้วกดเพิ่ม จะเห็นสรุปที่นี่")
+
     st.stop()
 
 # ========== PAGE: ดูหุ้น (default) ==========
