@@ -1425,14 +1425,26 @@ with st.sidebar:
     st.session_state.page = page
 
     st.markdown('<div class="section-h">ค้นหาหุ้น</div>', unsafe_allow_html=True)
+    if page == "🌐 ภาพรวมตลาด":
+        initial_val = ""
+        placeholder_txt = "พิมพ์ ticker → กระโดดไปดูหุ้น"
+    else:
+        initial_val = st.session_state.ticker
+        placeholder_txt = "AAPL, TSLA, BTC-USD, ^GSPC …"
     ticker_input = st.text_input(
         "รหัสหุ้น",
-        value=st.session_state.ticker,
-        placeholder="AAPL, TSLA, BTC-USD, ^GSPC …",
+        value=initial_val,
+        placeholder=placeholder_txt,
         label_visibility="collapsed",
+        key=f"ticker_input_{page}",
     )
-    ticker = ticker_input.upper().strip()
-    st.session_state.ticker = ticker
+    typed = ticker_input.upper().strip()
+    if typed and typed != st.session_state.ticker:
+        st.session_state.ticker = typed
+        if page == "🌐 ภาพรวมตลาด":
+            st.session_state.page = "📊 ดูหุ้น"
+            st.rerun()
+    ticker = st.session_state.ticker
 
     # Watchlist controls
     in_watchlist = ticker in st.session_state.watchlist
@@ -1459,6 +1471,21 @@ with st.sidebar:
                 st.session_state.ticker = sym
                 st.rerun()
 
+    # Defaults (used when sidebar controls are hidden on non-stock pages)
+    period = "1y"
+    interval = "1d"
+    translate_news = True
+
+if page != "📊 ดูหุ้น":
+    with st.sidebar:
+        st.write("")
+        if st.button("🔄 อัพเดตข้อมูล", use_container_width=True, key="refresh_global"):
+            st.cache_data.clear()
+            st.rerun()
+        st.caption("ข้อมูลจาก Yahoo Finance · แคช 60 วิ ถึง 1 ชม.")
+
+if page == "📊 ดูหุ้น":
+  with st.sidebar:
     st.markdown('<div class="section-h">หมวดหมู่</div>', unsafe_allow_html=True)
 
     pick_labels = [f"{name}" for name in PICKS.keys()]
