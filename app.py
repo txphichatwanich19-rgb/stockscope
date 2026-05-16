@@ -17,6 +17,35 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 _sentiment_analyzer = SentimentIntensityAnalyzer()
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def ai_summarize_news(api_key: str, ticker: str, news_signature: str, news_payload: str) -> str:
+    """Cache key includes news signature so we re-summarize when news changes."""
+    if not api_key or not news_payload:
+        return ""
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=1024,
+            messages=[{
+                "role": "user",
+                "content": (
+                    f"ฉันมีข่าวเกี่ยวกับหุ้น {ticker} ดังนี้:\n\n{news_payload}\n\n"
+                    "ช่วยวิเคราะห์เป็นภาษาไทยให้ครบทุกข้อ:\n"
+                    "1. **สรุปภาพรวม** (2-3 ประโยค)\n"
+                    "2. **ประเด็นสำคัญ 3-5 ข้อ** (bullet)\n"
+                    "3. **Sentiment โดยรวม** (บวก/ลบ/กลาง) พร้อมเหตุผลสั้นๆ\n"
+                    "4. **สิ่งที่ควรจับตา** (บอกว่าควรตามดูอะไรต่อ)\n\n"
+                    "ใช้ภาษาไทยที่อ่านง่าย ตรงไปตรงมา ไม่ต้องเกริ่นนำ"
+                ),
+            }],
+        )
+        return msg.content[0].text
+    except Exception as e:
+        return f"❌ Error: {str(e)[:200]}"
+
+
 def sentiment_score(text: str) -> float:
     """Return VADER compound score: -1 (very neg) to +1 (very pos)."""
     if not text:
@@ -1641,6 +1670,22 @@ with st.sidebar:
     st.markdown('<div class="section-h">ตัวเลือก</div>', unsafe_allow_html=True)
     translate_news = st.checkbox("🌐 แปลข่าวเป็นภาษาไทย", value=True)
 
+    with st.expander("🤖 AI สรุปข่าว (Claude)"):
+        st.caption("ใส่ Anthropic API key เพื่อให้ AI สรุปข่าวเป็นภาษาไทย")
+        api_key_input = st.text_input(
+            "Anthropic API Key",
+            type="password",
+            value=st.session_state.get("anthropic_key", ""),
+            placeholder="sk-ant-…",
+            label_visibility="collapsed",
+        )
+        if api_key_input != st.session_state.get("anthropic_key"):
+            st.session_state["anthropic_key"] = api_key_input
+        st.caption(
+            "ขอ key ฟรีที่ [console.anthropic.com](https://console.anthropic.com) · "
+            "$5 ฟรีตอนสมัคร · ใช้ ~1฿ ต่อการสรุป"
+        )
+
     st.write("")
     if st.button("🔄 อัพเดตข้อมูล", use_container_width=True):
         st.cache_data.clear()
@@ -1677,6 +1722,130 @@ if macro:
         )
     macro_html += "</div>"
     st.markdown(macro_html, unsafe_allow_html=True)
+
+# Stock Screener
+with st.expander("🔍 สแกนหุ้น (Stock Screener)", expanded=False):
+    sc_top = st.columns([1.5, 1.5, 1])
+    sc_universe = sc_top[0].selectbox(
+        "🌐 Universe",
+        ["ทุกหมวดรวมกัน"] + list(CATEGORIES.keys()),
+        key="sc_universe",
+    )
+    sc_sort = sc_top[1].selectbox(
+        "🔢 เรียงโดย",
+        [
+            "Market Cap (สูง→ต่ำ)",
+            "P/E (ต่ำ→สูง)",
+            "Revenue Growth (สูง→ต่ำ)",
+            "Performance 3 เดือน (สูง→ต่ำ)",
+            "Performance 1 เดือน (สูง→ต่ำ)",
+            "RSI (ต่ำ→สูง · oversold ก่อน)",
+            "Profit Margin (สูง→ต่ำ)",
+        ],
+        key="sc_sort",
+    )
+
+    f1, f2, f3, f4 = st.columns(4)
+    pe_max = f1.number_input("P/E ≤", min_value=0, max_value=500, value=100, step=5, key="sc_pe")
+    growth_min = f2.number_input("Revenue Growth ≥ (%)", min_value=-50, max_value=200, value=-50, step=5, key="sc_growth")
+    margin_min = f3.number_input("Profit Margin ≥ (%)", min_value=-100, max_value=80, value=-100, step=5, key="sc_margin")
+    perf_min = f4.number_input("3M Performance ≥ (%)", min_value=-90, max_value=300, value=-90, step=5, key="sc_perf")
+
+    rsi_range = st.slider("RSI ในช่วง", 0, 100, (0, 100), key="sc_rsi")
+    only_buy_rated = st.checkbox("เฉพาะที่นักวิเคราะห์ Buy / Strong Buy (rec_mean ≤ 2.5)", value=False, key="sc_buy")
+
+    if st.button("🔍 เริ่มสแกน", use_container_width=True, key="sc_scan"):
+        if sc_universe == "ทุกหมวดรวมกัน":
+            scan_tickers = set()
+            for tks in CATEGORIES.values():
+                scan_tickers.update(tks)
+        else:
+            scan_tickers = set(CATEGORIES[sc_universe])
+        scan_tickers = tuple(sorted(scan_tickers))
+
+        with st.spinner(f"กำลังสแกน {len(scan_tickers)} หุ้น…"):
+            mini_scan = load_mini_batch(scan_tickers)
+            fund_scan = load_info_batch(scan_tickers)
+
+        results = []
+        for t in scan_tickers:
+            d = mini_scan.get(t, {})
+            f = fund_scan.get(t, {})
+            if not d or not d.get("last"):
+                continue
+            pe = f.get("pe")
+            rev_g = f.get("rev_growth")
+            margin = f.get("profit_margin")
+            rec_mean = f.get("rec_mean")
+            rsi_v = d.get("rsi")
+            m3 = d.get("m3")
+
+            if pe and pe > pe_max:
+                continue
+            if rev_g is not None and rev_g * 100 < growth_min:
+                continue
+            if margin is not None and margin * 100 < margin_min:
+                continue
+            if m3 is not None and m3 < perf_min:
+                continue
+            if rsi_v is not None and (rsi_v < rsi_range[0] or rsi_v > rsi_range[1]):
+                continue
+            if only_buy_rated and (rec_mean is None or rec_mean > 2.5):
+                continue
+
+            results.append({
+                "t": t, "d": d, "f": f,
+                "mcap": f.get("market_cap") or 0,
+                "pe": pe, "rev_g": rev_g, "margin": margin,
+                "rsi": rsi_v, "m1": d.get("m1"), "m3": m3,
+                "rec": rec_mean,
+            })
+
+        # Sort
+        sort_map = {
+            "Market Cap (สูง→ต่ำ)": (lambda r: r["mcap"] or 0, True),
+            "P/E (ต่ำ→สูง)": (lambda r: r["pe"] if r["pe"] else 99999, False),
+            "Revenue Growth (สูง→ต่ำ)": (lambda r: r["rev_g"] or -999, True),
+            "Performance 3 เดือน (สูง→ต่ำ)": (lambda r: r["m3"] or -999, True),
+            "Performance 1 เดือน (สูง→ต่ำ)": (lambda r: r["m1"] or -999, True),
+            "RSI (ต่ำ→สูง · oversold ก่อน)": (lambda r: r["rsi"] or 100, False),
+            "Profit Margin (สูง→ต่ำ)": (lambda r: r["margin"] or -999, True),
+        }
+        key_fn, reverse = sort_map[sc_sort]
+        results.sort(key=key_fn, reverse=reverse)
+
+        st.success(f"พบ {len(results)} หุ้น (แสดง {min(50, len(results))} อันดับแรก)")
+
+        def _mcap_fmt(x):
+            if not x: return "—"
+            for unit, div in [("T", 1e12), ("B", 1e9), ("M", 1e6)]:
+                if x >= div: return f"{x/div:.1f}{unit}"
+            return f"{x:,.0f}"
+
+        table = []
+        for r in results[:50]:
+            table.append({
+                "Ticker": r["t"],
+                "ราคา": f"{r['d']['last']:,.2f}",
+                "Mcap": _mcap_fmt(r["mcap"]),
+                "P/E": f"{r['pe']:.1f}" if r["pe"] else "—",
+                "Rev%": f"{r['rev_g']*100:+.0f}" if r["rev_g"] is not None else "—",
+                "Margin%": f"{r['margin']*100:.0f}" if r["margin"] is not None else "—",
+                "RSI": f"{r['rsi']:.0f}" if r["rsi"] is not None else "—",
+                "1M%": f"{r['m1']:+.1f}" if r["m1"] is not None else "—",
+                "3M%": f"{r['m3']:+.1f}" if r["m3"] is not None else "—",
+                "Analyst": _rec_thai(None, r["rec"]) if r["rec"] else "—",
+            })
+        st.dataframe(pd.DataFrame(table), use_container_width=True, hide_index=True)
+
+        # Quick-pick buttons for top 8
+        if results:
+            st.caption("คลิกเพื่อดูรายละเอียดเต็ม:")
+            pick_cols = st.columns(8)
+            for i, r in enumerate(results[:8]):
+                if pick_cols[i].button(r["t"], key=f"sc_pick_{r['t']}", use_container_width=True):
+                    st.session_state.ticker = r["t"]
+                    st.rerun()
 
 # Sector Heatmap (expandable)
 with st.expander("🔥 ภาพรวม Sector (US ตลาดวันนี้)", expanded=False):
@@ -2272,6 +2441,28 @@ with tab_news:
             """,
             unsafe_allow_html=True,
         )
+
+        # AI summary
+        api_key = st.session_state.get("anthropic_key", "")
+        if api_key:
+            ai_col1, ai_col2 = st.columns([3, 1])
+            ai_col1.caption("💡 ให้ AI วิเคราะห์ข่าวทั้งหมดและสรุปเป็นภาษาไทย")
+            if ai_col2.button("🤖 สรุปด้วย AI", use_container_width=True, key="ai_summary_btn"):
+                with st.spinner("AI กำลังอ่านและสรุป…"):
+                    # Build payload from first 15 news
+                    items = []
+                    for n in news_list[:15]:
+                        ts = n["when"].strftime("%Y-%m-%d") if n.get("when") else "—"
+                        items.append(f"- [{ts}] {n.get('title', '')}: {(n.get('summary') or '')[:300]}")
+                    payload = "\n".join(items)
+                    # Signature based on titles
+                    import hashlib
+                    sig = hashlib.md5(payload.encode("utf-8")).hexdigest()[:12]
+                    summary = ai_summarize_news(api_key, ticker, sig, payload)
+                if summary:
+                    with st.container(border=True):
+                        st.markdown("**🤖 AI วิเคราะห์ข่าว** (Claude Haiku)")
+                        st.markdown(summary)
 
     if translate_news and news_list:
         with st.spinner("กำลังแปลข่าวเป็นภาษาไทย…"):
