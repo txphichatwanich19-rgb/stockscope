@@ -99,6 +99,13 @@ st.markdown(
         line-height: 1;
         font-variant-numeric: tabular-nums;
     }
+    .hero .hero-thb {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
+        color: #64748b;
+        font-weight: 600;
+        margin-top: 0.25rem;
+    }
     .hero .chip {
         display: inline-flex;
         align-items: center;
@@ -245,7 +252,7 @@ st.markdown(
     /* Macro market bar (top of page) */
     .macro-bar {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 0.5rem;
         margin-bottom: 0.85rem;
     }
@@ -284,6 +291,50 @@ st.markdown(
         .macro-bar { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
         .macro-price { font-size: 0.88rem; }
         .macro-chip { font-size: 0.68rem; }
+    }
+
+    /* Sector heatmap grid */
+    .sector-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+        margin-bottom: 0.6rem;
+    }
+    .sector-cell {
+        border: 1px solid;
+        border-radius: 10px;
+        padding: 0.7rem 0.85rem;
+        transition: transform 0.15s;
+    }
+    .sector-cell:hover { transform: translateY(-1px); }
+    .sector-sym {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #0f172a;
+    }
+    .sector-name {
+        font-size: 0.72rem;
+        color: #475569;
+        margin-top: 0.1rem;
+    }
+    .sector-pct {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 1.15rem;
+        margin-top: 0.35rem;
+        letter-spacing: -0.01em;
+        font-variant-numeric: tabular-nums;
+    }
+    .sector-sub {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: #64748b;
+        margin-top: 0.1rem;
+        font-variant-numeric: tabular-nums;
+    }
+    @media (max-width: 768px) {
+        .sector-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     /* 52-week position gauge */
@@ -806,13 +857,54 @@ def load_mini_batch(tickers: tuple[str, ...]) -> dict[str, dict]:
     return out
 
 
+@st.cache_data(ttl=600, show_spinner=False)
+def load_usdthb() -> float | None:
+    try:
+        h = yf.Ticker("THB=X").history(period="1d")
+        if not h.empty:
+            return float(h["Close"].iloc[-1])
+    except Exception:
+        pass
+    return None
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def load_sector_heatmap() -> list[dict]:
+    """11 SPDR sector ETFs + their 1D / 5D / 1M change."""
+    sectors = {
+        "XLK": "เทคโนโลยี", "XLF": "การเงิน", "XLV": "สุขภาพ",
+        "XLE": "พลังงาน", "XLI": "อุตสาหกรรม", "XLY": "อุปโภคบริโภค (สมัครใจ)",
+        "XLP": "อุปโภคบริโภค (จำเป็น)", "XLU": "สาธารณูปโภค", "XLB": "วัตถุดิบ",
+        "XLRE": "อสังหา", "XLC": "สื่อสาร",
+    }
+    try:
+        raw = yf.download(list(sectors.keys()), period="1mo", interval="1d",
+                          progress=False, threads=True, auto_adjust=False)
+    except Exception:
+        return []
+    out = []
+    for s, name in sectors.items():
+        try:
+            close = raw["Close"][s].dropna() if isinstance(raw.columns, pd.MultiIndex) else raw["Close"].dropna()
+            if len(close) < 2:
+                continue
+            last = float(close.iloc[-1])
+            d1 = (last / float(close.iloc[-2]) - 1) * 100 if len(close) >= 2 else 0
+            d5 = (last / float(close.iloc[-6]) - 1) * 100 if len(close) >= 6 else 0
+            d20 = (last / float(close.iloc[-21]) - 1) * 100 if len(close) >= 21 else 0
+            out.append({"sym": s, "name": name, "last": last, "d1": d1, "d5": d5, "d20": d20})
+        except Exception:
+            continue
+    return out
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def load_macro() -> dict:
     """Fetch major index/yield/dollar levels for sidebar."""
-    syms = ["^GSPC", "^IXIC", "^VIX", "^TNX", "DX-Y.NYB"]
+    syms = ["^GSPC", "^IXIC", "^VIX", "^TNX", "^SET.BK", "THB=X"]
     labels = {
-        "^GSPC": "S&P 500", "^IXIC": "Nasdaq",
-        "^VIX": "VIX", "^TNX": "10Y Yield", "DX-Y.NYB": "USD Index",
+        "^GSPC": "S&P 500", "^IXIC": "Nasdaq", "^VIX": "VIX",
+        "^TNX": "10Y Yield (US)", "^SET.BK": "SET Index", "THB=X": "USD/THB",
     }
     out = {}
     try:
@@ -1211,6 +1303,8 @@ if "ticker" not in st.session_state:
     st.session_state.ticker = "AAPL"
 if "category" not in st.session_state:
     st.session_state.category = "🔥 หุ้นยักษ์ใหญ่"
+if "watchlist" not in st.session_state:
+    st.session_state.watchlist = []
 
 with st.sidebar:
     st.markdown(
@@ -1235,6 +1329,31 @@ with st.sidebar:
     )
     ticker = ticker_input.upper().strip()
     st.session_state.ticker = ticker
+
+    # Watchlist controls
+    in_watchlist = ticker in st.session_state.watchlist
+    wc1, wc2 = st.columns([1, 1])
+    if not in_watchlist:
+        if wc1.button("⭐ เพิ่มใน Watchlist", use_container_width=True, key="add_wl"):
+            if ticker and ticker not in st.session_state.watchlist:
+                st.session_state.watchlist.append(ticker)
+                st.rerun()
+    else:
+        if wc1.button("★ อยู่ใน Watchlist", use_container_width=True, key="remove_wl"):
+            st.session_state.watchlist.remove(ticker)
+            st.rerun()
+    if st.session_state.watchlist and wc2.button("🗑️ ล้าง", use_container_width=True, key="clear_wl"):
+        st.session_state.watchlist = []
+        st.rerun()
+
+    if st.session_state.watchlist:
+        st.markdown('<div class="section-h">⭐ Watchlist</div>', unsafe_allow_html=True)
+        wl_cols = st.columns(2)
+        for i, sym in enumerate(st.session_state.watchlist):
+            display = sym.replace(".BK", "").replace("-USD", "")
+            if wl_cols[i % 2].button(display, key=f"wl_{sym}", use_container_width=True):
+                st.session_state.ticker = sym
+                st.rerun()
 
     st.markdown('<div class="section-h">หมวดหมู่</div>', unsafe_allow_html=True)
 
@@ -1559,6 +1678,46 @@ if macro:
     macro_html += "</div>"
     st.markdown(macro_html, unsafe_allow_html=True)
 
+# Sector Heatmap (expandable)
+with st.expander("🔥 ภาพรวม Sector (US ตลาดวันนี้)", expanded=False):
+    sectors = load_sector_heatmap()
+    if sectors:
+        # Sort by 1-day change descending for at-a-glance
+        sectors_sorted = sorted(sectors, key=lambda x: x["d1"], reverse=True)
+
+        def _sec_color(pct: float) -> tuple[str, str]:
+            if pct >= 2:    return "#15803d", "#dcfce7"
+            if pct >= 1:    return "#166534", "#ecfdf5"
+            if pct >= 0.3:  return "#16a34a", "#f0fdf4"
+            if pct > -0.3:  return "#475569", "#f1f5f9"
+            if pct > -1:    return "#b91c1c", "#fef2f2"
+            if pct > -2:    return "#991b1b", "#fee2e2"
+            return "#7f1d1d", "#fecaca"
+
+        st.caption("คลิกชื่อ ETF เพื่อดูรายละเอียดเต็ม · สี = % เปลี่ยนแปลงวันนี้")
+        hm_html = '<div class="sector-grid">'
+        for s in sectors_sorted:
+            color, bg = _sec_color(s["d1"])
+            hm_html += (
+                f'<div class="sector-cell" style="background:{bg};border-color:{color};">'
+                f'<div class="sector-sym">{s["sym"]}</div>'
+                f'<div class="sector-name">{s["name"]}</div>'
+                f'<div class="sector-pct" style="color:{color};">{s["d1"]:+.2f}%</div>'
+                f'<div class="sector-sub">5D {s["d5"]:+.1f}% · 1M {s["d20"]:+.1f}%</div>'
+                f'</div>'
+            )
+        hm_html += "</div>"
+        st.markdown(hm_html, unsafe_allow_html=True)
+
+        # Quick-pick buttons
+        sec_cols = st.columns(6)
+        for i, s in enumerate(sectors_sorted[:6]):
+            if sec_cols[i].button(s["sym"], key=f"sec_{s['sym']}", use_container_width=True):
+                st.session_state.ticker = s["sym"]
+                st.rerun()
+    else:
+        st.info("ไม่สามารถโหลดข้อมูล sector ได้")
+
 # Header
 name = info.get("longName") or info.get("shortName") or ticker
 last_close = float(df["Close"].iloc[-1])
@@ -1590,11 +1749,18 @@ with hero_left:
         unsafe_allow_html=True,
     )
 with hero_right:
+    thb_html = ""
+    if currency == "USD":
+        thb_rate = load_usdthb()
+        if thb_rate:
+            thb_val = last_close * thb_rate
+            thb_html = f'<div class="hero-thb">≈ ฿{thb_val:,.2f} บาท</div>'
     st.markdown(
         f"""
         <div class="hero" style="text-align:right;">
             <div class="sym">ราคาล่าสุด · {currency}</div>
             <div class="price">{last_close:,.2f}</div>
+            {thb_html}
             <div class="chip {chip_cls}">{arrow} {change:+.2f} ({pct:+.2f}%)</div>
         </div>
         """,
