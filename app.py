@@ -1393,7 +1393,7 @@ CATEGORIES: dict[str, list[str]] = {
 }
 
 if "ticker" not in st.session_state:
-    st.session_state.ticker = "AAPL"
+    st.session_state.ticker = ""
 if "category" not in st.session_state:
     st.session_state.category = "🔥 หุ้นยักษ์ใหญ่"
 if "watchlist" not in st.session_state:
@@ -2069,7 +2069,45 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
 
 # ========== PAGE: ดูหุ้น (default) ==========
 if not ticker:
-    st.info("ใส่รหัสหุ้นทางซ้าย")
+    st.markdown("## 🔍 เลือกหุ้นที่อยากดู")
+    st.caption("ค้นหาในช่อง sidebar หรือเลือกจากปุ่มด้านล่าง · หรือกลับไป **🌐 ภาพรวมตลาด** เพื่อดู Top Movers / Sector")
+    st.write("")
+    st.markdown("**🔥 หุ้นยอดนิยม**")
+    popular = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AVGO"]
+    pop_cols = st.columns(4)
+    for i, sym in enumerate(popular):
+        if pop_cols[i % 4].button(sym, key=f"empty_pop_{sym}", use_container_width=True):
+            st.session_state.ticker = sym
+            st.rerun()
+
+    st.write("")
+    st.markdown("**🪙 คริปโต**")
+    crypto = ["BTC-USD", "ETH-USD", "SOL-USD", "DOGE-USD"]
+    cr_cols = st.columns(4)
+    for i, sym in enumerate(crypto):
+        if cr_cols[i].button(sym.replace("-USD", ""), key=f"empty_cr_{sym}", use_container_width=True):
+            st.session_state.ticker = sym
+            st.rerun()
+
+    st.write("")
+    st.markdown("**🏦 หุ้นไทย (SET)**")
+    thai = ["PTT.BK", "KBANK.BK", "SCB.BK", "AOT.BK", "CPALL.BK", "ADVANC.BK", "DELTA.BK", "PTTEP.BK"]
+    th_cols = st.columns(4)
+    for i, sym in enumerate(thai):
+        if th_cols[i % 4].button(sym.replace(".BK", ""), key=f"empty_th_{sym}", use_container_width=True):
+            st.session_state.ticker = sym
+            st.rerun()
+
+    if st.session_state.watchlist:
+        st.write("")
+        st.markdown("**⭐ Watchlist ของคุณ**")
+        wl_cols = st.columns(4)
+        for i, sym in enumerate(st.session_state.watchlist[:8]):
+            display = sym.replace(".BK", "").replace("-USD", "")
+            if wl_cols[i % 4].button(display, key=f"empty_wl_{sym}", use_container_width=True):
+                st.session_state.ticker = sym
+                st.rerun()
+
     st.stop()
 
 with st.spinner(f"กำลังโหลด {ticker}…"):
