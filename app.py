@@ -1334,6 +1334,8 @@ if "category" not in st.session_state:
     st.session_state.category = "🔥 หุ้นยักษ์ใหญ่"
 if "watchlist" not in st.session_state:
     st.session_state.watchlist = []
+if "page" not in st.session_state:
+    st.session_state.page = "📊 ดูหุ้น"
 
 with st.sidebar:
     st.markdown(
@@ -1348,6 +1350,15 @@ with st.sidebar:
         """,
         unsafe_allow_html=True,
     )
+
+    # Page navigation
+    page = st.radio(
+        "หน้า",
+        ["📊 ดูหุ้น", "🌐 ภาพรวมตลาด", "🔍 สแกนหุ้น"],
+        index=["📊 ดูหุ้น", "🌐 ภาพรวมตลาด", "🔍 สแกนหุ้น"].index(st.session_state.page),
+        label_visibility="collapsed",
+    )
+    st.session_state.page = page
 
     st.markdown('<div class="section-h">ค้นหาหุ้น</div>', unsafe_allow_html=True)
     ticker_input = st.text_input(
@@ -1692,20 +1703,7 @@ with st.sidebar:
         st.rerun()
     st.caption("ข้อมูลจาก Yahoo Finance · หน่วง ~1 นาที · แคช 60 วิ")
 
-if not ticker:
-    st.info("ใส่รหัสหุ้นทางซ้าย")
-    st.stop()
-
-with st.spinner(f"กำลังโหลด {ticker}…"):
-    df = load_history(ticker, period, interval)
-    info = load_info(ticker)
-    news = load_news(ticker)
-
-if df.empty:
-    st.error(f"ไม่พบข้อมูลสำหรับ `{ticker}` — เช็ค ticker หรือเลือก interval/period ที่ Yahoo รองรับ")
-    st.stop()
-
-# Macro market overview
+# Macro market overview (always shown — every page)
 macro = load_macro()
 if macro:
     macro_html = '<div class="macro-bar">'
@@ -1723,8 +1721,10 @@ if macro:
     macro_html += "</div>"
     st.markdown(macro_html, unsafe_allow_html=True)
 
-# Stock Screener
-with st.expander("🔍 สแกนหุ้น (Stock Screener)", expanded=False):
+# ========== PAGE: สแกนหุ้น ==========
+if st.session_state.page == "🔍 สแกนหุ้น":
+    st.markdown("## 🔍 สแกนหุ้น (Stock Screener)")
+    st.caption("กรองหุ้นจากทั่วทุกหมวดด้วยเกณฑ์ที่ตั้งเอง · ตั้งค่า filter แล้วกด **เริ่มสแกน**")
     sc_top = st.columns([1.5, 1.5, 1])
     sc_universe = sc_top[0].selectbox(
         "🌐 Universe",
@@ -1847,8 +1847,13 @@ with st.expander("🔍 สแกนหุ้น (Stock Screener)", expanded=Fals
                     st.session_state.ticker = r["t"]
                     st.rerun()
 
-# Sector Heatmap (expandable)
-with st.expander("🔥 ภาพรวม Sector (US ตลาดวันนี้)", expanded=False):
+    st.stop()
+
+# ========== PAGE: ภาพรวมตลาด ==========
+if st.session_state.page == "🌐 ภาพรวมตลาด":
+    st.markdown("## 🌐 ภาพรวมตลาด US")
+    st.caption("ดูสถานะ sector ทั้งหมด · คลิก ETF เพื่อเข้าดูรายละเอียดเต็ม")
+    st.write("")
     sectors = load_sector_heatmap()
     if sectors:
         # Sort by 1-day change descending for at-a-glance
@@ -1886,6 +1891,24 @@ with st.expander("🔥 ภาพรวม Sector (US ตลาดวันนี
                 st.rerun()
     else:
         st.info("ไม่สามารถโหลดข้อมูล sector ได้")
+    # Bonus: top movers info
+    st.write("")
+    st.caption("💡 อยากดูหุ้นใน sector ไหน เลือกหมวดใน sidebar (☁️ Cloud / 🔐 ไซเบอร์ / 🤖 ชิป ฯลฯ)")
+    st.stop()
+
+# ========== PAGE: ดูหุ้น (default) ==========
+if not ticker:
+    st.info("ใส่รหัสหุ้นทางซ้าย")
+    st.stop()
+
+with st.spinner(f"กำลังโหลด {ticker}…"):
+    df = load_history(ticker, period, interval)
+    info = load_info(ticker)
+    news = load_news(ticker)
+
+if df.empty:
+    st.error(f"ไม่พบข้อมูลสำหรับ `{ticker}` — เช็ค ticker หรือเลือก interval/period ที่ Yahoo รองรับ")
+    st.stop()
 
 # Header
 name = info.get("longName") or info.get("shortName") or ticker
