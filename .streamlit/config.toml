@@ -6,8 +6,8 @@ showErrorDetails = true
 gatherUsageStats = false
 
 [theme]
-base = "dark"
-primaryColor = "#d4af7a"
-backgroundColor = "#0c0d10"
-secondaryBackgroundColor = "#15171c"
-textColor = "#ebe4d8"
+base = "light"
+primaryColor = "#4f46e5"
+backgroundColor = "#f7f8fa"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#0f172a"
