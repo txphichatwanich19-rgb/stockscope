@@ -1077,27 +1077,32 @@ def load_usdthb() -> float | None:
     return None
 
 
-@st.cache_data(ttl=120, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def load_premarket_movers(tickers: tuple[str, ...]) -> list[dict]:
-    """Fetch pre/post-market price changes via yfinance.Ticker.info in parallel."""
+    """Fetch pre/post-market price changes via yfinance.Ticker.info in parallel.
+    Permissive: returns whatever extended data is available, regardless of marketState.
+    """
     if not tickers:
         return []
     def _fetch(t: str) -> dict | None:
         try:
             info = yf.Ticker(t).info or {}
             state = (info.get("marketState") or "").upper()
-            session, p, c, pct = None, None, None, None
-            if state in ("PRE", "PREPRE") and info.get("preMarketPrice"):
-                session = "Pre"
-                p = info["preMarketPrice"]
-                c = info.get("preMarketChange")
-                pct = info.get("preMarketChangePercent")
-            elif state in ("POST", "POSTPOST", "CLOSED") and info.get("postMarketPrice"):
-                session = "After"
-                p = info["postMarketPrice"]
-                c = info.get("postMarketChange")
-                pct = info.get("postMarketChangePercent")
-            if session is None or p is None or pct is None:
+            pre_p = info.get("preMarketPrice")
+            pre_pct = info.get("preMarketChangePercent")
+            post_p = info.get("postMarketPrice")
+            post_pct = info.get("postMarketChangePercent")
+
+            # Prefer matching current state, then fall back to whichever has data
+            if state in ("PRE", "PREPRE") and pre_p and pre_pct is not None:
+                session, p, c, pct = "Pre", pre_p, info.get("preMarketChange"), pre_pct
+            elif state in ("POST", "POSTPOST") and post_p and post_pct is not None:
+                session, p, c, pct = "After", post_p, info.get("postMarketChange"), post_pct
+            elif pre_p and pre_pct is not None:
+                session, p, c, pct = "Pre", pre_p, info.get("preMarketChange"), pre_pct
+            elif post_p and post_pct is not None:
+                session, p, c, pct = "After", post_p, info.get("postMarketChange"), post_pct
+            else:
                 return None
             return {"sym": t, "session": session, "price": p,
                     "change": c, "pct": pct, "state": state}
@@ -2208,7 +2213,25 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
     # === Pre-Market / After-Hours Movers ===
     st.write("")
     st.markdown("### 🌅 Pre-Market / 🌙 After-Hours")
-    st.caption("ดูราคาหุ้นช่วง **ก่อน/หลังตลาดเปิด** · สหรัฐฯ pre-market 16:00–20:30 ไทย · after-hours 03:00–07:00 ไทย")
+
+    # Quick market status check (using first ticker we already have data for if possible)
+    from datetime import datetime as _dt
+    et_now = _dt.utcnow()  # use UTC, convert to ET
+    et_hour = (et_now.hour - 4) % 24  # ET = UTC - 4 (during DST)
+    et_minute = et_now.minute
+    weekday = et_now.weekday()  # 0 = Monday
+    if weekday >= 5:
+        market_hint = "🌙 ตลาดสหรัฐฯ ปิดวันเสาร์-อาทิตย์ · แสดงราคา after-hours ล่าสุดของวันศุกร์"
+    elif 4 <= et_hour < 9 or (et_hour == 9 and et_minute < 30):
+        market_hint = "🌅 กำลังเป็นช่วง Pre-Market ของสหรัฐฯ"
+    elif (et_hour == 9 and et_minute >= 30) or (10 <= et_hour < 16):
+        market_hint = "🟢 ตลาดสหรัฐฯ เปิดอยู่ตอนนี้ · แสดงราคา pre-market ของเช้านี้ (ถ้ามี)"
+    elif 16 <= et_hour < 20:
+        market_hint = "🌙 กำลังเป็นช่วง After-Hours ของสหรัฐฯ"
+    else:
+        market_hint = "⚪ ตลาดสหรัฐฯ ปิดอยู่ · แสดงราคา after-hours ล่าสุด"
+    st.caption(f"{market_hint} · pre-market 16:00–20:30 ไทย · regular 21:30–04:00 · after-hours 04:00–07:00")
+
     with st.spinner("กำลังดึงข้อมูล Pre/After-Hours…"):
         pm_data = load_premarket_movers(POPULAR_UNIVERSE)
     if pm_data:
@@ -2256,7 +2279,11 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
                         st.session_state.page = "📊 ดูหุ้น"
                         st.rerun()
     else:
-        st.info("ตอนนี้ไม่มีข้อมูล Pre/After-Hours สำหรับหุ้นในรายการ (อาจเป็นช่วงเวลาทำการปกติ)")
+        st.info(
+            "ตอนนี้ไม่มีข้อมูล Pre/After-Hours · "
+            "ลองกดปุ่ม **🔄 อัพเดตข้อมูล** ใน sidebar เพื่อโหลดใหม่ "
+            "(cache อาจค้างจากช่วงเวลาตลาดเปิดปกติ)"
+        )
 
     # === Watchlist summary ===
     if st.session_state.watchlist:
