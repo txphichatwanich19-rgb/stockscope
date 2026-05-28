@@ -75,7 +75,7 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
     html, body, [class*="css"], .stApp, .stMarkdown, button, input, textarea, select {
         font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
@@ -83,37 +83,43 @@ st.markdown(
 
     .stApp {
         background:
-            radial-gradient(900px 450px at 85% -5%, rgba(196,181,253,0.18), transparent 65%),
-            radial-gradient(700px 350px at -5% 15%, rgba(186,230,253,0.16), transparent 60%),
-            radial-gradient(600px 300px at 50% 105%, rgba(254,215,170,0.14), transparent 70%),
-            #fbfaf7;
+            radial-gradient(1200px 600px at 80% -5%, rgba(212,175,122,0.07), transparent 65%),
+            radial-gradient(800px 400px at -5% 100%, rgba(212,175,122,0.04), transparent 55%),
+            #0c0d10;
     }
 
     header[data-testid="stHeader"] { background: transparent; }
-    .block-container { padding-top: 1.25rem !important; max-width: 1400px; }
+    .block-container { padding-top: 1.5rem !important; max-width: 1380px; }
 
     /* Sidebar */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #ffffff 0%, #faf9f6 100%);
-        border-right: 1px solid rgba(28,25,23,0.05);
+        background: linear-gradient(180deg, #131419 0%, #0e0f13 100%);
+        border-right: 1px solid rgba(212,175,122,0.08);
     }
 
-    /* Smooth fade-in for content */
     @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(6px); }
+        from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: translateY(0); }
     }
     .hero, .tile, .pos52, .news-card, .level-tile, .verdict,
     .macro-tile, .sector-cell, .mover-cell, .sent-overall, .lv-ladder {
-        animation: fadeInUp 0.4s ease-out;
+        animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Global typography */
-    body, .stMarkdown, p, label, span, div {
-        color: #292524;
+    /* Global typography — warm cream on near-black */
+    body, .stMarkdown, p, label, span, div { color: #ebe4d8; }
+    h1, h2, h3, h4, h5, h6, .stMarkdown h2, .stMarkdown h3 {
+        color: #f5efe1;
+        font-family: 'Inter', sans-serif !important;
+        letter-spacing: -0.02em;
     }
-    h1, h2, h3, h4, h5, h6, .stMarkdown h2, .stMarkdown h3 { color: #1c1917; }
-    .stCaption, [data-testid="stCaptionContainer"] { color: #78716c !important; }
+    .stCaption, [data-testid="stCaptionContainer"] { color: #8a8275 !important; }
+
+    /* Hairline divider lines */
+    hr, [data-testid="stMarkdownContainer"] hr {
+        border-color: rgba(212,175,122,0.15) !important;
+        opacity: 1;
+    }
 
     /* Sidebar */
     [data-testid="stSidebar"] {
@@ -124,245 +130,310 @@ st.markdown(
         margin-bottom: 0.25rem;
     }
 
-    /* Hero card */
+    /* Hero card — editorial dark with warm champagne accent */
     .hero {
-        background: linear-gradient(135deg, #ffffff 0%, #fdfbf9 100%);
-        border: 1px solid rgba(28,25,23,0.06);
-        border-radius: 20px;
-        padding: 1.8rem 2rem;
+        background:
+            linear-gradient(135deg, rgba(212,175,122,0.04) 0%, transparent 60%),
+            linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.15);
+        border-radius: 4px;
+        padding: 2rem 2.25rem;
         margin-bottom: 1rem;
-        box-shadow:
-            0 1px 2px rgba(28,25,23,0.03),
-            0 4px 12px -4px rgba(28,25,23,0.06),
-            0 20px 40px -20px rgba(139,128,200,0.12);
-        transition: transform 0.3s, box-shadow 0.3s;
+        position: relative;
+        overflow: hidden;
+        transition: border-color 0.4s;
     }
-    .hero:hover {
-        transform: translateY(-1px);
-        box-shadow:
-            0 1px 2px rgba(28,25,23,0.04),
-            0 8px 20px -4px rgba(28,25,23,0.08),
-            0 28px 56px -20px rgba(139,128,200,0.2);
+    .hero::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(212,175,122,0.6) 50%, transparent 100%);
     }
+    .hero:hover { border-color: rgba(212,175,122,0.35); }
     .hero .sym {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 0.74rem;
-        color: #8b80c8;
-        letter-spacing: 0.2em;
+        font-size: 0.72rem;
+        color: #d4af7a;
+        letter-spacing: 0.3em;
         text-transform: uppercase;
-        font-weight: 700;
+        font-weight: 500;
     }
     .hero .name {
-        font-size: 1.95rem;
-        font-weight: 700;
-        color: #1c1917;
-        margin: 0.3rem 0 0.2rem 0;
-        letter-spacing: -0.03em;
-        line-height: 1.1;
+        font-family: 'Playfair Display', serif !important;
+        font-size: 2.4rem;
+        font-weight: 600;
+        color: #f5efe1;
+        margin: 0.4rem 0 0.4rem 0;
+        letter-spacing: -0.02em;
+        line-height: 1.05;
     }
-    .hero .meta { color: #78716c; font-size: 0.85rem; font-weight: 500; }
+    .hero .meta {
+        color: #8a8275;
+        font-size: 0.78rem;
+        font-weight: 400;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
     .hero .price {
-        font-size: 3.3rem;
-        font-weight: 700;
-        color: #1c1917;
-        letter-spacing: -0.045em;
+        font-family: 'Playfair Display', serif !important;
+        font-size: 4rem;
+        font-weight: 600;
+        color: #f5efe1;
+        letter-spacing: -0.04em;
         line-height: 1;
         font-variant-numeric: tabular-nums;
     }
     .hero .hero-thb {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 0.92rem;
-        color: #78716c;
-        font-weight: 600;
-        margin-top: 0.4rem;
-        letter-spacing: -0.01em;
+        font-size: 0.85rem;
+        color: #8a8275;
+        font-weight: 400;
+        margin-top: 0.6rem;
+        letter-spacing: 0.04em;
     }
     .hero .chip {
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
-        padding: 0.4rem 0.95rem;
-        border-radius: 999px;
-        font-weight: 700;
-        font-size: 0.92rem;
-        margin-top: 0.7rem;
+        padding: 0.4rem 0.9rem;
+        border-radius: 2px;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 500;
+        font-size: 0.85rem;
+        margin-top: 0.8rem;
         font-variant-numeric: tabular-nums;
+        letter-spacing: 0.02em;
     }
     .chip.up    {
-        background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
-        color: #047857; border: 1px solid #a7f3d0;
+        background: rgba(132,204,22,0.08); color: #a3e635;
+        border: 1px solid rgba(132,204,22,0.35);
     }
     .chip.down  {
-        background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
-        color: #be123c; border: 1px solid #fecdd3;
+        background: rgba(220,38,38,0.08); color: #f87171;
+        border: 1px solid rgba(220,38,38,0.35);
     }
     .chip.flat  {
-        background: #f5f5f4; color: #57534e;
-        border: 1px solid #e7e5e4;
+        background: rgba(212,175,122,0.06); color: #d4af7a;
+        border: 1px solid rgba(212,175,122,0.25);
     }
 
-    /* Stat tiles */
+    /* Market session badge + extended hours */
+    .session-badge {
+        display: inline-block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        padding: 0.2rem 0.6rem;
+        border-radius: 2px;
+        margin-top: 0.6rem;
+        margin-left: 0.4rem;
+        border: 1px solid transparent;
+    }
+    .session-open   { background: rgba(132,204,22,0.06); color: #a3e635; border-color: rgba(132,204,22,0.3); }
+    .session-pre    { background: rgba(212,175,122,0.06); color: #d4af7a; border-color: rgba(212,175,122,0.3); }
+    .session-post   { background: rgba(196,148,255,0.06); color: #c4b5fd; border-color: rgba(196,148,255,0.3); }
+    .session-closed { background: rgba(138,130,117,0.06); color: #8a8275; border-color: rgba(138,130,117,0.3); }
+
+    .ext-hours {
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px dashed rgba(212,175,122,0.18);
+        text-align: right;
+    }
+    .ext-hours .ext-head {
+        font-size: 0.68rem;
+        font-weight: 500;
+        color: #8a8275;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+    }
+    .ext-hours .ext-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: baseline;
+        gap: 0.7rem;
+    }
+    .ext-hours .ext-price {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.55rem;
+        font-weight: 600;
+        color: #ebe4d8;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+    }
+    .ext-hours .ext-chip {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.78rem;
+        font-weight: 500;
+        padding: 0.22rem 0.55rem;
+        border-radius: 2px;
+        border: 1px solid transparent;
+        font-variant-numeric: tabular-nums;
+    }
+    .ext-hours .ext-chip.up   { background: rgba(132,204,22,0.06); color: #a3e635; border-color: rgba(132,204,22,0.3); }
+    .ext-hours .ext-chip.down { background: rgba(220,38,38,0.06); color: #f87171; border-color: rgba(220,38,38,0.3); }
+
+    /* Stat tiles — editorial cards */
     .tile {
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.05);
-        border-radius: 16px;
-        padding: 1.1rem 1.25rem;
+        background: linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.1);
+        border-radius: 4px;
+        padding: 1.2rem 1.3rem;
         height: 100%;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
-        transition: all 0.25s;
+        transition: all 0.3s;
+        position: relative;
     }
     .tile:hover {
+        border-color: rgba(212,175,122,0.3);
         transform: translateY(-2px);
-        border-color: rgba(139,128,200,0.25);
-        box-shadow: 0 4px 12px -2px rgba(28,25,23,0.06), 0 12px 24px -8px rgba(139,128,200,0.1);
     }
     .tile .label {
-        color: #78716c;
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 0.12em;
+        color: #8a8275;
+        font-size: 0.66rem;
+        font-weight: 500;
+        letter-spacing: 0.18em;
         text-transform: uppercase;
     }
     .tile .value {
-        color: #1c1917;
-        font-size: 1.45rem;
-        font-weight: 700;
-        margin-top: 0.45rem;
-        letter-spacing: -0.025em;
+        color: #f5efe1;
+        font-family: 'Playfair Display', serif !important;
+        font-size: 1.7rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+        letter-spacing: -0.02em;
         font-variant-numeric: tabular-nums;
     }
 
-    /* Tabs */
+    /* Tabs — minimalist underline style */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 0.3rem;
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.05);
-        border-radius: 14px;
-        padding: 0.35rem;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
+        gap: 0;
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid rgba(212,175,122,0.12);
+        border-radius: 0;
+        padding: 0;
     }
     .stTabs [data-baseweb="tab"] {
         background: transparent;
-        border-radius: 10px;
-        padding: 0.6rem 1.2rem;
-        color: #78716c;
-        font-weight: 600;
-        font-size: 0.95rem;
-        transition: all 0.2s;
+        border-radius: 0;
+        padding: 0.8rem 1.4rem;
+        color: #8a8275;
+        font-weight: 500;
+        font-size: 0.92rem;
+        letter-spacing: 0.04em;
+        transition: all 0.25s;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
     }
-    .stTabs [data-baseweb="tab"]:hover {
-        color: #1c1917;
-        background: #faf9f6;
-    }
+    .stTabs [data-baseweb="tab"]:hover { color: #ebe4d8; }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #f3f0ff 0%, #e0f2fe 100%) !important;
-        color: #1c1917 !important;
-        font-weight: 700;
+        background: transparent !important;
+        color: #d4af7a !important;
+        font-weight: 600;
+        border-bottom: 2px solid #d4af7a !important;
     }
 
-    /* News cards */
+    /* News cards — editorial */
     .news-card {
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.05);
-        border-radius: 14px;
-        padding: 1.15rem 1.25rem;
+        background: linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.08);
+        border-radius: 4px;
+        padding: 1.25rem 1.4rem;
         margin-bottom: 0.7rem;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
-        transition: all 0.25s;
+        transition: all 0.3s;
     }
     .news-card:hover {
-        border-color: rgba(139,128,200,0.3);
-        box-shadow: 0 4px 14px -4px rgba(139,128,200,0.15);
+        border-color: rgba(212,175,122,0.3);
         transform: translateY(-1px);
     }
-    .news-card .title { color: #1c1917; font-weight: 600; font-size: 1rem; line-height: 1.45; }
-    .news-card .title a { color: #1c1917; text-decoration: none; }
-    .news-card .title a:hover { color: #6d28d9; }
-    .news-card .orig   { color: #a8a29e; font-size: 0.82rem; margin-top: 0.25rem; font-style: italic; }
-    .news-card .meta   { color: #78716c; font-size: 0.78rem; margin-top: 0.4rem; }
-    .news-card .summary{ color: #44403c; font-size: 0.9rem; margin-top: 0.6rem; line-height: 1.6; }
-
-    /* Verdict card */
-    .verdict {
-        border-radius: 18px;
-        padding: 1.6rem 1.75rem;
-        font-size: 1.45rem;
-        font-weight: 700;
-        text-align: center;
-        letter-spacing: -0.02em;
-        margin-bottom: 1rem;
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.05);
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03), 0 12px 28px -16px rgba(28,25,23,0.08);
-    }
-    .verdict.bull {
-        background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%);
-        border-color: #a7f3d0;
-        color: #047857;
-    }
-    .verdict.bear {
-        background: linear-gradient(180deg, #ffffff 0%, #fff1f2 100%);
-        border-color: #fecdd3;
-        color: #be123c;
-    }
-    .verdict.flat {
-        background: linear-gradient(180deg, #ffffff 0%, #fefce8 100%);
-        border-color: #fde68a;
-        color: #a16207;
-    }
-
-    /* Buttons */
-    .stButton > button {
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.08);
-        color: #44403c;
+    .news-card .title {
+        font-family: 'Playfair Display', serif !important;
+        color: #f5efe1;
         font-weight: 600;
-        border-radius: 10px;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
+        font-size: 1.1rem;
+        line-height: 1.4;
+        letter-spacing: -0.01em;
+    }
+    .news-card .title a { color: #f5efe1; text-decoration: none; }
+    .news-card .title a:hover { color: #d4af7a; }
+    .news-card .orig   { color: #6b6557; font-size: 0.78rem; margin-top: 0.3rem; font-style: italic; }
+    .news-card .meta   { color: #8a8275; font-size: 0.74rem; margin-top: 0.5rem; letter-spacing: 0.04em; }
+    .news-card .summary{ color: #c9c2b3; font-size: 0.88rem; margin-top: 0.65rem; line-height: 1.65; }
+
+    /* Verdict card — editorial */
+    .verdict {
+        border-radius: 4px;
+        padding: 1.8rem 2rem;
+        font-family: 'Playfair Display', serif !important;
+        font-size: 1.65rem;
+        font-weight: 600;
+        text-align: center;
+        letter-spacing: -0.015em;
+        margin-bottom: 1rem;
+        background: linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.15);
+        position: relative;
+    }
+    .verdict::before {
+        content: '';
+        position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+        width: 60%; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(212,175,122,0.4), transparent);
+    }
+    .verdict.bull { color: #a3e635; border-color: rgba(132,204,22,0.3); }
+    .verdict.bear { color: #f87171; border-color: rgba(220,38,38,0.3); }
+    .verdict.flat { color: #d4af7a; border-color: rgba(212,175,122,0.3); }
+
+    /* Buttons — minimalist editorial */
+    .stButton > button {
+        background: transparent;
+        border: 1px solid rgba(212,175,122,0.2);
+        color: #ebe4d8;
+        font-weight: 500;
+        font-size: 0.88rem;
+        border-radius: 2px;
+        letter-spacing: 0.04em;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .stButton > button:hover {
-        background: #fdfcfa;
-        border-color: rgba(139,128,200,0.4);
-        color: #6d28d9;
-        box-shadow: 0 2px 6px -1px rgba(139,128,200,0.15);
-        transform: translateY(-1px);
+        background: rgba(212,175,122,0.06);
+        border-color: #d4af7a;
+        color: #d4af7a;
     }
-    .stButton > button:active { transform: translateY(0); }
 
-    /* Brand */
+    /* Brand — refined editorial */
     .brand {
-        display: flex; align-items: center; gap: 0.75rem;
-        padding: 0.3rem 0 1.2rem 0;
-        border-bottom: 1px solid rgba(28,25,23,0.06);
-        margin-bottom: 1rem;
+        display: flex; align-items: center; gap: 0.85rem;
+        padding: 0.4rem 0 1.3rem 0;
+        border-bottom: 1px solid rgba(212,175,122,0.12);
+        margin-bottom: 1.1rem;
     }
     .brand .logo {
         width: 42px; height: 42px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 50%, #93c5fd 100%);
-        color: #ffffff;
+        border-radius: 2px;
+        background: linear-gradient(135deg, #d4af7a 0%, #b8915e 100%);
+        color: #15171c;
         display: flex; align-items: center; justify-content: center;
-        font-size: 1.3rem;
-        font-weight: 800;
-        box-shadow:
-            0 4px 12px -2px rgba(139,128,200,0.35),
-            inset 0 1px 0 rgba(255,255,255,0.4);
+        font-family: 'Playfair Display', serif;
+        font-size: 1.4rem;
+        font-weight: 700;
     }
     .brand .name {
-        font-weight: 700;
-        font-size: 1.2rem;
-        color: #1c1917;
-        letter-spacing: -0.025em;
-        line-height: 1.1;
+        font-family: 'Playfair Display', serif !important;
+        font-weight: 600;
+        font-size: 1.35rem;
+        color: #f5efe1;
+        letter-spacing: -0.015em;
+        line-height: 1;
     }
     .brand .sub  {
-        font-size: 0.68rem;
-        color: #8b80c8;
-        letter-spacing: 0.14em;
+        font-size: 0.62rem;
+        color: #d4af7a;
+        letter-spacing: 0.24em;
         text-transform: uppercase;
-        font-weight: 700;
-        margin-top: 0.15rem;
+        font-weight: 500;
+        margin-top: 0.3rem;
     }
 
     /* Macro market bar (top of page) */
@@ -373,43 +444,41 @@ st.markdown(
         margin-bottom: 0.85rem;
     }
     .macro-tile {
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.05);
-        border-radius: 12px;
-        padding: 0.7rem 0.9rem;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
-        transition: all 0.2s;
+        background: linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.08);
+        border-radius: 4px;
+        padding: 0.75rem 0.95rem;
+        transition: all 0.25s;
     }
     .macro-tile:hover {
+        border-color: rgba(212,175,122,0.3);
         transform: translateY(-1px);
-        border-color: rgba(139,128,200,0.25);
-        box-shadow: 0 4px 10px -2px rgba(139,128,200,0.08);
     }
     .macro-label {
-        font-size: 0.66rem; font-weight: 700;
-        color: #78716c; letter-spacing: 0.1em;
+        font-size: 0.62rem; font-weight: 500;
+        color: #8a8275; letter-spacing: 0.18em;
         text-transform: uppercase;
     }
     .macro-row {
         display: flex; justify-content: space-between; align-items: baseline;
-        gap: 0.5rem; margin-top: 0.3rem;
+        gap: 0.5rem; margin-top: 0.35rem;
     }
     .macro-price {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1rem; font-weight: 700;
-        color: #1c1917;
+        font-family: 'Playfair Display', serif;
+        font-size: 1.15rem; font-weight: 600;
+        color: #f5efe1;
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.01em;
     }
     .macro-chip {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 0.72rem; font-weight: 700;
-        padding: 0.15rem 0.55rem; border-radius: 999px;
+        font-size: 0.7rem; font-weight: 500;
+        padding: 0.15rem 0.5rem; border-radius: 2px;
         font-variant-numeric: tabular-nums;
         border: 1px solid transparent;
     }
-    .macro-chip.up   { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-    .macro-chip.down { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .macro-chip.up   { background: rgba(132,204,22,0.06); color: #a3e635; border-color: rgba(132,204,22,0.25); }
+    .macro-chip.down { background: rgba(220,38,38,0.06); color: #f87171; border-color: rgba(220,38,38,0.25); }
 
     @media (max-width: 768px) {
         .macro-bar { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
@@ -425,37 +494,36 @@ st.markdown(
         margin-bottom: 0.55rem;
     }
     .mover-cell {
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.05);
-        border-radius: 12px;
-        padding: 0.7rem 0.85rem;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
-        transition: all 0.2s;
+        background: linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.08);
+        border-radius: 4px;
+        padding: 0.85rem 1rem;
+        transition: all 0.25s;
     }
     .mover-cell:hover {
-        border-color: rgba(139,128,200,0.3);
+        border-color: rgba(212,175,122,0.3);
         transform: translateY(-1px);
-        box-shadow: 0 4px 10px -2px rgba(28,25,23,0.06);
     }
-    .mover-cell.mover-up   { border-left: 3px solid #86efac; }
-    .mover-cell.mover-down { border-left: 3px solid #fca5a5; }
+    .mover-cell.mover-up   { border-left: 2px solid #a3e635; }
+    .mover-cell.mover-down { border-left: 2px solid #f87171; }
     .mover-sym {
         font-family: 'JetBrains Mono', monospace;
-        font-weight: 700; font-size: 0.85rem;
-        color: #1c1917;
+        font-weight: 500; font-size: 0.85rem;
+        color: #f5efe1;
+        letter-spacing: 0.04em;
     }
     .mover-pct {
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 700; font-size: 1rem;
-        margin-top: 0.25rem;
+        font-family: 'Playfair Display', serif;
+        font-weight: 600; font-size: 1.15rem;
+        margin-top: 0.3rem;
         font-variant-numeric: tabular-nums;
     }
-    .mover-up .mover-pct   { color: #047857; }
-    .mover-down .mover-pct { color: #be123c; }
+    .mover-up .mover-pct   { color: #a3e635; }
+    .mover-down .mover-pct { color: #f87171; }
     .mover-price {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 0.78rem;
-        color: #78716c;
+        font-size: 0.74rem;
+        color: #8a8275;
         margin-top: 0.15rem;
         font-variant-numeric: tabular-nums;
     }
@@ -472,39 +540,36 @@ st.markdown(
     }
     .sector-cell {
         border: 1px solid;
-        border-radius: 12px;
-        padding: 0.8rem 0.95rem;
-        transition: all 0.2s;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
+        border-radius: 4px;
+        padding: 0.95rem 1.1rem;
+        transition: all 0.25s;
     }
-    .sector-cell:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px -2px rgba(28,25,23,0.06);
-    }
+    .sector-cell:hover { transform: translateY(-2px); }
     .sector-sym {
         font-family: 'JetBrains Mono', monospace;
-        font-weight: 700;
-        font-size: 0.88rem;
-        color: #1c1917;
+        font-weight: 500;
+        font-size: 0.85rem;
+        color: #f5efe1;
+        letter-spacing: 0.05em;
     }
     .sector-name {
-        font-size: 0.72rem;
-        color: #57534e;
-        margin-top: 0.1rem;
+        font-size: 0.7rem;
+        color: #8a8275;
+        margin-top: 0.15rem;
     }
     .sector-pct {
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 700;
-        font-size: 1.2rem;
-        margin-top: 0.35rem;
+        font-family: 'Playfair Display', serif;
+        font-weight: 600;
+        font-size: 1.35rem;
+        margin-top: 0.4rem;
         letter-spacing: -0.01em;
         font-variant-numeric: tabular-nums;
     }
     .sector-sub {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 0.7rem;
-        color: #78716c;
-        margin-top: 0.1rem;
+        font-size: 0.68rem;
+        color: #8a8275;
+        margin-top: 0.15rem;
         font-variant-numeric: tabular-nums;
     }
     @media (max-width: 768px) {
@@ -513,182 +578,189 @@ st.markdown(
 
     /* 52-week position gauge */
     .pos52 {
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.05);
-        border-radius: 14px;
-        padding: 0.95rem 1.15rem;
+        background: linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.1);
+        border-radius: 4px;
+        padding: 1.05rem 1.25rem;
         margin-bottom: 0.7rem;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
     }
     .pos52-head {
         display: flex; justify-content: space-between;
-        align-items: baseline; margin-bottom: 0.6rem;
+        align-items: baseline; margin-bottom: 0.7rem;
     }
     .pos52-title {
-        font-size: 0.75rem; font-weight: 700;
-        color: #78716c; letter-spacing: 0.12em;
+        font-size: 0.7rem; font-weight: 500;
+        color: #8a8275; letter-spacing: 0.18em;
         text-transform: uppercase;
     }
     .pos52-pct {
         font-family: 'JetBrains Mono', monospace;
-        font-weight: 700; font-size: 0.95rem;
-        color: #1c1917;
+        font-weight: 500; font-size: 0.88rem;
+        color: #d4af7a;
         font-variant-numeric: tabular-nums;
+        letter-spacing: 0.04em;
     }
     .pos52-track {
-        position: relative; height: 10px;
-        background: linear-gradient(90deg, #fecdd3 0%, #fde68a 50%, #a7f3d0 100%);
-        border-radius: 999px; overflow: visible;
+        position: relative; height: 2px;
+        background: linear-gradient(90deg, rgba(220,38,38,0.6) 0%, rgba(212,175,122,0.5) 50%, rgba(132,204,22,0.6) 100%);
+        border-radius: 0;
+        overflow: visible;
     }
     .pos52-marker {
         position: absolute; top: 50%; transform: translate(-50%, -50%);
-        width: 18px; height: 18px; border-radius: 50%;
-        background: #ffffff;
-        border: 3px solid #1c1917;
-        box-shadow: 0 2px 4px rgba(28,25,23,0.15);
+        width: 14px; height: 14px; border-radius: 50%;
+        background: #d4af7a;
+        border: 2px solid #15171c;
+        box-shadow: 0 0 0 1px #d4af7a;
     }
     .pos52-ends {
         display: flex; justify-content: space-between;
-        margin-top: 0.55rem; font-size: 0.78rem; color: #78716c;
+        margin-top: 0.7rem; font-size: 0.74rem; color: #8a8275;
         font-family: 'JetBrains Mono', monospace;
         font-variant-numeric: tabular-nums;
     }
 
-    /* Generic mini-chip (used for sentiment + small badges) */
+    /* Generic mini-chip */
     .mini-chip {
         display: inline-flex; align-items: center;
-        padding: 0.2rem 0.6rem; border-radius: 999px;
-        font-size: 0.74rem; font-weight: 700;
+        padding: 0.2rem 0.6rem; border-radius: 2px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem; font-weight: 500;
         border: 1px solid transparent;
+        letter-spacing: 0.02em;
     }
-    .mini-chip.up   { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-    .mini-chip.down { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
-    .mini-chip.flat { background: #f5f5f4; color: #57534e; border-color: #e7e5e4; }
+    .mini-chip.up   { background: rgba(132,204,22,0.06); color: #a3e635; border-color: rgba(132,204,22,0.3); }
+    .mini-chip.down { background: rgba(220,38,38,0.06); color: #f87171; border-color: rgba(220,38,38,0.3); }
+    .mini-chip.flat { background: rgba(212,175,122,0.06); color: #d4af7a; border-color: rgba(212,175,122,0.25); }
 
     /* News overall sentiment */
     .sent-overall {
         display: flex; justify-content: space-between; align-items: center;
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.05);
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
+        background: linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.1);
+        border-radius: 4px;
+        padding: 0.85rem 1.1rem;
         margin-bottom: 0.7rem;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
     }
     .sent-overall-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #44403c;
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: #c9c2b3;
+        letter-spacing: 0.04em;
     }
     .sent-overall-score {
         display: flex; align-items: center; gap: 0.6rem;
     }
     .sent-counts {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 0.8rem;
-        color: #78716c;
+        font-size: 0.78rem;
+        color: #8a8275;
     }
 
-    /* Level tile */
+    /* Level tile — editorial */
     .level-tile {
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.05);
-        border-radius: 14px;
-        padding: 1rem 1.1rem;
+        background: linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.1);
+        border-radius: 4px;
+        padding: 1.1rem 1.2rem;
         height: 100%;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
-        transition: all 0.2s;
+        transition: all 0.25s;
     }
-    .level-tile:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px -2px rgba(28,25,23,0.06);
-    }
+    .level-tile:hover { transform: translateY(-2px); border-color: rgba(212,175,122,0.3); }
     .level-tile .role {
-        font-size: 0.68rem; font-weight: 700;
-        letter-spacing: 0.12em; text-transform: uppercase;
-        color: #78716c;
+        font-size: 0.66rem; font-weight: 500;
+        letter-spacing: 0.18em; text-transform: uppercase;
+        color: #8a8275;
     }
     .level-tile .price {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1.3rem; font-weight: 700;
-        margin-top: 0.4rem; letter-spacing: -0.02em;
+        font-family: 'Playfair Display', serif;
+        font-size: 1.55rem; font-weight: 600;
+        margin-top: 0.5rem; letter-spacing: -0.02em;
         font-variant-numeric: tabular-nums;
     }
     .level-tile .delta {
-        font-size: 0.76rem; margin-top: 0.25rem; color: #78716c;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.74rem; margin-top: 0.3rem; color: #8a8275;
     }
-    .level-tile.entry  { border-color: #a7f3d0; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); }
-    .level-tile.entry .price { color: #047857; }
-    .level-tile.stop   { border-color: #fed7aa; background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%); }
-    .level-tile.stop .price  { color: #c2410c; }
-    .level-tile.target { border-color: #ddd6fe; background: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%); }
-    .level-tile.target .price { color: #6d28d9; }
-    .level-tile.resistance { border-color: #fecdd3; background: linear-gradient(180deg, #ffffff 0%, #fff1f2 100%); }
-    .level-tile.resistance .price { color: #be123c; }
-    .level-tile.current { background: #faf9f6; }
-    .level-tile.current .price  { color: #1c1917; }
+    .level-tile.entry  { border-left: 2px solid #a3e635; }
+    .level-tile.entry .price { color: #a3e635; }
+    .level-tile.stop   { border-left: 2px solid #fb923c; }
+    .level-tile.stop .price  { color: #fb923c; }
+    .level-tile.target { border-left: 2px solid #d4af7a; }
+    .level-tile.target .price { color: #d4af7a; }
+    .level-tile.resistance { border-left: 2px solid #f87171; }
+    .level-tile.resistance .price { color: #f87171; }
+    .level-tile.current { border-left: 2px solid #d4af7a; background: linear-gradient(180deg, rgba(212,175,122,0.05) 0%, #15171c 100%); }
+    .level-tile.current .price { color: #f5efe1; }
 
     .rr-badge {
         display: inline-block;
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.08);
-        border-radius: 999px;
-        padding: 0.35rem 0.95rem;
-        font-size: 0.85rem;
-        color: #57534e;
-        font-weight: 600;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
+        background: linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.25);
+        border-radius: 2px;
+        padding: 0.4rem 1rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
+        color: #c9c2b3;
+        font-weight: 500;
+        letter-spacing: 0.04em;
     }
-    .rr-badge b { color: #1c1917; font-weight: 700; }
+    .rr-badge b { color: #d4af7a; font-weight: 600; }
 
     .pick-intro {
-        color: #57534e; font-size: 0.9rem; margin-bottom: 0.8rem;
+        color: #8a8275; font-size: 0.88rem; margin-bottom: 0.8rem;
+        font-style: italic;
     }
     .pick-disclaim {
-        background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
-        border: 1px solid #fde68a;
-        border-radius: 12px; padding: 0.75rem 0.95rem;
-        color: #92400e; font-size: 0.85rem; margin-bottom: 1rem;
+        background: linear-gradient(180deg, rgba(212,175,122,0.05) 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.2);
+        border-left: 2px solid #d4af7a;
+        border-radius: 4px; padding: 0.85rem 1.1rem;
+        color: #c9c2b3; font-size: 0.85rem; margin-bottom: 1rem;
     }
 
     /* Price ladder (above chart) */
     .lv-ladder {
-        background: #ffffff;
-        border: 1px solid rgba(28,25,23,0.05);
-        border-radius: 14px;
-        padding: 0.95rem 1.1rem;
+        background: linear-gradient(180deg, #181a20 0%, #15171c 100%);
+        border: 1px solid rgba(212,175,122,0.1);
+        border-radius: 4px;
+        padding: 1.1rem 1.25rem;
         margin-bottom: 0.7rem;
-        box-shadow: 0 1px 2px rgba(28,25,23,0.03);
     }
     .lv-row {
         display: flex;
         align-items: center;
         gap: 0.6rem;
         flex-wrap: wrap;
-        padding: 0.4rem 0;
+        padding: 0.45rem 0;
     }
     .lv-arrow {
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: #78716c;
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: #8a8275;
         min-width: 145px;
         flex-shrink: 0;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
     }
-    .lv-row-up .lv-arrow { color: #be123c; }
-    .lv-row-down .lv-arrow { color: #047857; }
-    .lv-pills { display: flex; gap: 0.45rem; flex-wrap: wrap; }
-    .lv-empty { font-size: 0.82rem; color: #a8a29e; font-style: italic; }
+    .lv-row-up .lv-arrow { color: #f87171; }
+    .lv-row-down .lv-arrow { color: #a3e635; }
+    .lv-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .lv-empty { font-size: 0.8rem; color: #6b6557; font-style: italic; }
 
     .lv-pill {
         display: inline-flex; align-items: baseline; gap: 0.5rem;
         padding: 0.4rem 0.85rem;
-        border-radius: 999px;
+        border-radius: 2px;
         border: 1px solid;
-        font-size: 0.85rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
     }
-    .lv-pill.lv-sell { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
-    .lv-pill.lv-buy  { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-    .lv-pill.lv-stop { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .lv-pill.lv-sell { background: rgba(220,38,38,0.06); color: #f87171; border-color: rgba(220,38,38,0.3); }
+    .lv-pill.lv-buy  { background: rgba(132,204,22,0.06); color: #a3e635; border-color: rgba(132,204,22,0.3); }
+    .lv-pill.lv-stop { background: rgba(251,146,60,0.06); color: #fb923c; border-color: rgba(251,146,60,0.3); }
     .lv-pill .lv-role {
         font-weight: 600;
         font-size: 0.8rem;
@@ -706,41 +778,42 @@ st.markdown(
         font-variant-numeric: tabular-nums;
     }
 
-    /* Now row — prominent center */
+    /* Now row — editorial center */
     .lv-now {
-        display: flex; align-items: center; gap: 0.85rem;
-        padding: 0.8rem 0.95rem;
+        display: flex; align-items: center; gap: 1rem;
+        padding: 0.95rem 1rem;
         margin: 0.5rem 0;
-        background: linear-gradient(90deg, #faf9f6 0%, #ffffff 50%, #faf9f6 100%);
-        border-top: 1px solid rgba(28,25,23,0.06);
-        border-bottom: 1px solid rgba(28,25,23,0.06);
-        border-radius: 10px;
+        background: linear-gradient(90deg, rgba(212,175,122,0.04) 0%, rgba(212,175,122,0.08) 50%, rgba(212,175,122,0.04) 100%);
+        border-top: 1px solid rgba(212,175,122,0.2);
+        border-bottom: 1px solid rgba(212,175,122,0.2);
+        border-radius: 0;
     }
     .lv-now-label {
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: #57534e;
-        letter-spacing: 0.08em;
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: #d4af7a;
+        letter-spacing: 0.2em;
         text-transform: uppercase;
         min-width: 145px;
     }
     .lv-now-price {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1c1917;
-        letter-spacing: -0.015em;
+        font-family: 'Playfair Display', serif;
+        font-size: 1.85rem;
+        font-weight: 600;
+        color: #f5efe1;
+        letter-spacing: -0.02em;
         font-variant-numeric: tabular-nums;
     }
     .lv-now-tag {
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: #047857;
-        background: #ecfdf5;
-        border: 1px solid #a7f3d0;
-        padding: 0.22rem 0.6rem;
-        border-radius: 999px;
-        letter-spacing: 0.06em;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.68rem;
+        font-weight: 500;
+        color: #a3e635;
+        background: rgba(132,204,22,0.08);
+        border: 1px solid rgba(132,204,22,0.3);
+        padding: 0.25rem 0.65rem;
+        border-radius: 2px;
+        letter-spacing: 0.1em;
     }
 
     @media (max-width: 768px) {
@@ -752,14 +825,23 @@ st.markdown(
         .lv-now-price { font-size: 1.2rem; }
     }
 
-    /* Section heading */
+    /* Section heading — editorial */
     .section-h {
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: #94a3b8;
-        letter-spacing: 0.14em;
+        font-size: 0.66rem;
+        font-weight: 500;
+        color: #d4af7a;
+        letter-spacing: 0.24em;
         text-transform: uppercase;
-        margin: 0.85rem 0 0.55rem 0;
+        margin: 1rem 0 0.6rem 0;
+        position: relative;
+        padding-left: 0.85rem;
+    }
+    .section-h::before {
+        content: '';
+        position: absolute; left: 0; top: 50%;
+        width: 4px; height: 4px;
+        background: #d4af7a;
+        transform: translateY(-50%);
     }
 
     /* Hide default streamlit footer */
@@ -886,6 +968,60 @@ def bollinger(series: pd.Series, window: int = 20, n_std: float = 2.0):
     mid = sma(series, window)
     std = series.rolling(window=window, min_periods=1).std()
     return mid + n_std * std, mid, mid - n_std * std
+
+
+def get_market_session(info: dict) -> dict:
+    """Returns market state + extended hours info if available.
+    Market states: REGULAR / PRE / POST / POSTPOST / PREPRE / CLOSED
+    """
+    state = (info.get("marketState") or "").upper()
+
+    state_label = {
+        "REGULAR":  ("🟢 ตลาดเปิด", "open"),
+        "PRE":      ("🌅 Pre-Market", "pre"),
+        "PREPRE":   ("🌅 Pre-Market (early)", "pre"),
+        "POST":     ("🌙 After Hours", "post"),
+        "POSTPOST": ("🌙 After Hours (late)", "post"),
+        "CLOSED":   ("⚪ ตลาดปิด", "closed"),
+    }.get(state, ("⚪ —", "closed"))
+
+    result = {"state": state, "label": state_label[0], "css": state_label[1], "ext": None}
+
+    if state in ("PRE", "PREPRE"):
+        p = info.get("preMarketPrice")
+        if p:
+            result["ext"] = {
+                "session": "Pre-Market",
+                "icon": "🌅",
+                "price": p,
+                "change": info.get("preMarketChange"),
+                "change_pct": info.get("preMarketChangePercent"),
+                "time": info.get("preMarketTime"),
+            }
+    elif state in ("POST", "POSTPOST"):
+        p = info.get("postMarketPrice")
+        if p:
+            result["ext"] = {
+                "session": "After Hours",
+                "icon": "🌙",
+                "price": p,
+                "change": info.get("postMarketChange"),
+                "change_pct": info.get("postMarketChangePercent"),
+                "time": info.get("postMarketTime"),
+            }
+    elif state == "CLOSED":
+        # Show last post-market if available
+        p = info.get("postMarketPrice")
+        if p:
+            result["ext"] = {
+                "session": "Last After Hours",
+                "icon": "🌙",
+                "price": p,
+                "change": info.get("postMarketChange"),
+                "change_pct": info.get("postMarketChangePercent"),
+                "time": info.get("postMarketTime"),
+            }
+    return result
 
 
 def to_tv_symbol(yf_sym: str) -> str:
@@ -1044,6 +1180,37 @@ def load_usdthb() -> float | None:
     except Exception:
         pass
     return None
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def load_premarket_movers(tickers: tuple[str, ...]) -> list[dict]:
+    """Fetch pre/post-market price changes via yfinance.Ticker.info in parallel."""
+    if not tickers:
+        return []
+    def _fetch(t: str) -> dict | None:
+        try:
+            info = yf.Ticker(t).info or {}
+            state = (info.get("marketState") or "").upper()
+            session, p, c, pct = None, None, None, None
+            if state in ("PRE", "PREPRE") and info.get("preMarketPrice"):
+                session = "Pre"
+                p = info["preMarketPrice"]
+                c = info.get("preMarketChange")
+                pct = info.get("preMarketChangePercent")
+            elif state in ("POST", "POSTPOST", "CLOSED") and info.get("postMarketPrice"):
+                session = "After"
+                p = info["postMarketPrice"]
+                c = info.get("postMarketChange")
+                pct = info.get("postMarketChangePercent")
+            if session is None or p is None or pct is None:
+                return None
+            return {"sym": t, "session": session, "price": p,
+                    "change": c, "pct": pct, "state": state}
+        except Exception:
+            return None
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        results = [r for r in ex.map(_fetch, tickers) if r is not None]
+    return results
 
 
 @st.cache_data(ttl=180, show_spinner=False)
@@ -2060,14 +2227,14 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
         sectors_sorted = sorted(sectors, key=lambda x: x["d1"], reverse=True)
 
         def _sec_color(pct: float) -> tuple[str, str]:
-            # Returns (border_color, bg_color) — soft pastels
-            if pct >= 2:    return "#86efac", "#dcfce7"
-            if pct >= 1:    return "#a7f3d0", "#ecfdf5"
-            if pct >= 0.3:  return "#a7f3d0", "#f0fdf4"
-            if pct > -0.3:  return "#e7e5e4", "#fafaf9"
-            if pct > -1:    return "#fecdd3", "#fff1f2"
-            if pct > -2:    return "#fecaca", "#fef2f2"
-            return "#fca5a5", "#fee2e2"
+            # Returns (border_color, bg) for dark editorial theme
+            if pct >= 2:    return "rgba(132,204,22,0.5)", "linear-gradient(180deg, rgba(132,204,22,0.10) 0%, #15171c 100%)"
+            if pct >= 1:    return "rgba(132,204,22,0.35)", "linear-gradient(180deg, rgba(132,204,22,0.06) 0%, #15171c 100%)"
+            if pct >= 0.3:  return "rgba(132,204,22,0.2)", "linear-gradient(180deg, rgba(132,204,22,0.03) 0%, #15171c 100%)"
+            if pct > -0.3:  return "rgba(212,175,122,0.15)", "#15171c"
+            if pct > -1:    return "rgba(220,38,38,0.2)", "linear-gradient(180deg, rgba(220,38,38,0.03) 0%, #15171c 100%)"
+            if pct > -2:    return "rgba(220,38,38,0.35)", "linear-gradient(180deg, rgba(220,38,38,0.06) 0%, #15171c 100%)"
+            return "rgba(220,38,38,0.5)", "linear-gradient(180deg, rgba(220,38,38,0.10) 0%, #15171c 100%)"
 
         st.caption("คลิกชื่อ ETF เพื่อดูรายละเอียดเต็ม · สี = % เปลี่ยนแปลงวันนี้")
         hm_html = '<div class="sector-grid">'
@@ -2143,6 +2310,59 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
                 st.session_state.ticker = m["sym"]
                 st.session_state.page = "📊 ดูหุ้น"
                 st.rerun()
+
+    # === Pre-Market / After-Hours Movers ===
+    st.write("")
+    st.markdown("### 🌅 Pre-Market / 🌙 After-Hours")
+    st.caption("ดูราคาหุ้นช่วง **ก่อน/หลังตลาดเปิด** · สหรัฐฯ pre-market 16:00–20:30 ไทย · after-hours 03:00–07:00 ไทย")
+    with st.spinner("กำลังดึงข้อมูล Pre/After-Hours…"):
+        pm_data = load_premarket_movers(POPULAR_UNIVERSE)
+    if pm_data:
+        pm_gainers = sorted([m for m in pm_data if (m["pct"] or 0) > 0],
+                            key=lambda x: x["pct"], reverse=True)[:8]
+        pm_losers = sorted([m for m in pm_data if (m["pct"] or 0) < 0],
+                           key=lambda x: x["pct"])[:8]
+
+        def _pm_html(items: list[dict], cls: str) -> str:
+            html = '<div class="mover-grid">'
+            for m in items:
+                arrow = "▲" if (m["pct"] or 0) >= 0 else "▼"
+                icon = "🌅" if m["session"] == "Pre" else "🌙"
+                html += (
+                    f'<div class="mover-cell mover-{cls}">'
+                    f'<div class="mover-sym">{icon} {m["sym"]}</div>'
+                    f'<div class="mover-pct">{arrow} {m["pct"]:+.2f}%</div>'
+                    f'<div class="mover-price">{m["price"]:,.2f}</div>'
+                    f'</div>'
+                )
+            html += "</div>"
+            return html
+
+        if not pm_gainers and not pm_losers:
+            st.info("ตอนนี้ยังไม่มีการเคลื่อนไหวใน Pre/After-Hours (อาจเป็นช่วงตลาดเปิดหรือดึก ๆ)")
+        else:
+            pm1, pm2 = st.columns(2)
+            if pm_gainers:
+                with pm1:
+                    st.markdown("**🟢 ขึ้นมากสุด (นอกเวลา)**")
+                    st.markdown(_pm_html(pm_gainers, "up"), unsafe_allow_html=True)
+            if pm_losers:
+                with pm2:
+                    st.markdown("**🔴 ลงมากสุด (นอกเวลา)**")
+                    st.markdown(_pm_html(pm_losers, "down"), unsafe_allow_html=True)
+
+            # Quick-pick for top pre-market gainers
+            all_pm = (pm_gainers + pm_losers)[:8]
+            if all_pm:
+                st.caption("คลิกเพื่อดูรายละเอียดเต็ม:")
+                pm_cols = st.columns(min(8, len(all_pm)))
+                for i, m in enumerate(all_pm):
+                    if pm_cols[i].button(m["sym"], key=f"pm_pick_{m['sym']}", use_container_width=True):
+                        st.session_state.ticker = m["sym"]
+                        st.session_state.page = "📊 ดูหุ้น"
+                        st.rerun()
+    else:
+        st.info("ตอนนี้ไม่มีข้อมูล Pre/After-Hours สำหรับหุ้นในรายการ (อาจเป็นช่วงเวลาทำการปกติ)")
 
     # === Watchlist summary ===
     if st.session_state.watchlist:
@@ -2266,6 +2486,26 @@ with hero_right:
         if thb_rate:
             thb_val = last_close * thb_rate
             thb_html = f'<div class="hero-thb">≈ ฿{thb_val:,.2f} บาท</div>'
+
+    # Market session + extended hours
+    session = get_market_session(info)
+    session_badge = f'<div class="session-badge session-{session["css"]}">{session["label"]}</div>'
+    ext_html = ""
+    if session["ext"]:
+        e = session["ext"]
+        ep = e["price"]; ec = e["change"] or 0; epct = e["change_pct"] or 0
+        ext_cls = "up" if ec >= 0 else "down"
+        ext_arrow = "▲" if ec >= 0 else "▼"
+        ext_html = f"""
+        <div class="ext-hours">
+            <div class="ext-head">{e['icon']} {e['session']}</div>
+            <div class="ext-row">
+                <span class="ext-price">{ep:,.2f}</span>
+                <span class="ext-chip {ext_cls}">{ext_arrow} {ec:+.2f} ({epct:+.2f}%)</span>
+            </div>
+        </div>
+        """
+
     st.markdown(
         f"""
         <div class="hero" style="text-align:right;">
@@ -2273,6 +2513,8 @@ with hero_right:
             <div class="price">{last_close:,.2f}</div>
             {thb_html}
             <div class="chip {chip_cls}">{arrow} {change:+.2f} ({pct:+.2f}%)</div>
+            {session_badge}
+            {ext_html}
         </div>
         """,
         unsafe_allow_html=True,
@@ -2383,10 +2625,10 @@ with tab_chart:
           "symbol": "{tv_symbol}",
           "interval": "{tv_interval}",
           "timezone": "Asia/Bangkok",
-          "theme": "light",
+          "theme": "dark",
           "style": "1",
           "locale": "th_TH",
-          "toolbar_bg": "#ffffff",
+          "toolbar_bg": "#15171c",
           "enable_publishing": false,
           "withdateranges": true,
           "hide_side_toolbar": false,
@@ -2528,31 +2770,31 @@ with tab_stats:
                     rev_vals = [float(qf.at["Total Revenue", c]) / 1e9 for c in cols_q]
                     fig_q.add_trace(go.Bar(
                         name="รายได้", x=date_labels, y=rev_vals,
-                        marker_color="#c4b5fd",
+                        marker_color="#d4af7a",
                         text=[f"${v:.1f}B" for v in rev_vals], textposition="outside",
-                        textfont=dict(color="#57534e"),
+                        textfont=dict(color="#c9c2b3"),
                     ))
                 if "Net Income" in qf.index:
                     ni_vals = [float(qf.at["Net Income", c]) / 1e9 for c in cols_q]
                     fig_q.add_trace(go.Bar(
                         name="กำไรสุทธิ", x=date_labels, y=ni_vals,
-                        marker_color="#86efac",
+                        marker_color="#a3e635",
                         text=[f"${v:.1f}B" for v in ni_vals], textposition="outside",
-                        textfont=dict(color="#57534e"),
+                        textfont=dict(color="#c9c2b3"),
                     ))
 
                 fig_q.update_layout(
                     barmode="group", height=320,
-                    template="plotly_white",
-                    paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                     margin=dict(l=20, r=20, t=20, b=20),
                     yaxis_title="พันล้านดอลลาร์ (USD)",
-                    font=dict(family="Inter, sans-serif", color="#78716c", size=11),
+                    font=dict(family="Inter, sans-serif", color="#8a8275", size=11),
                     legend=dict(orientation="h", yanchor="bottom", y=1.02,
                                 xanchor="right", x=1, bgcolor="rgba(0,0,0,0)"),
                 )
-                fig_q.update_xaxes(gridcolor="#f5f5f4", color="#78716c")
-                fig_q.update_yaxes(gridcolor="#f5f5f4", color="#78716c", zerolinecolor="#e7e5e4")
+                fig_q.update_xaxes(gridcolor="rgba(212,175,122,0.05)", color="#8a8275")
+                fig_q.update_yaxes(gridcolor="rgba(212,175,122,0.05)", color="#8a8275", zerolinecolor="rgba(212,175,122,0.1)")
                 st.plotly_chart(fig_q, use_container_width=True,
                                 config={"displaylogo": False})
 
