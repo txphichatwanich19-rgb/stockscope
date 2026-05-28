@@ -2286,57 +2286,68 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
         market_hint = "⚪ ตลาดสหรัฐฯ ปิดอยู่ · แสดงราคา after-hours ล่าสุด"
     st.caption(f"{market_hint} · pre-market 16:00–20:30 ไทย · regular 21:30–04:00 · after-hours 04:00–07:00")
 
+    # Universe includes popular + watchlist
+    pm_universe = list(POPULAR_UNIVERSE) + [t for t in st.session_state.watchlist if t not in POPULAR_UNIVERSE]
     with st.spinner("กำลังดึงข้อมูล Pre/After-Hours…"):
-        pm_data = load_premarket_movers(POPULAR_UNIVERSE)
+        pm_data = load_premarket_movers(tuple(pm_universe))
+
+    def _pm_html(items: list[dict]) -> str:
+        html = '<div class="mover-grid">'
+        for m in items:
+            pct = m.get("pct") or 0
+            cls = "up" if pct >= 0 else "down"
+            arrow = "▲" if pct >= 0 else "▼"
+            icon = "🌅" if m["session"] == "Pre" else "🌙"
+            html += (
+                f'<div class="mover-cell mover-{cls}">'
+                f'<div class="mover-sym">{icon} {m["sym"]}</div>'
+                f'<div class="mover-pct">{arrow} {pct:+.2f}%</div>'
+                f'<div class="mover-price">{m["price"]:,.2f}</div>'
+                f'</div>'
+            )
+        html += "</div>"
+        return html
+
     if pm_data:
-        pm_gainers = sorted([m for m in pm_data if (m["pct"] or 0) > 0],
-                            key=lambda x: x["pct"], reverse=True)[:8]
-        pm_losers = sorted([m for m in pm_data if (m["pct"] or 0) < 0],
-                           key=lambda x: x["pct"])[:8]
+        # Sort by |pct| descending (most active first) — always show, regardless of direction
+        pm_sorted = sorted(pm_data, key=lambda x: abs(x.get("pct") or 0), reverse=True)
+        pm_gainers = [m for m in pm_sorted if (m.get("pct") or 0) > 0][:8]
+        pm_losers = [m for m in pm_sorted if (m.get("pct") or 0) < 0][:8]
 
-        def _pm_html(items: list[dict], cls: str) -> str:
-            html = '<div class="mover-grid">'
-            for m in items:
-                arrow = "▲" if (m["pct"] or 0) >= 0 else "▼"
-                icon = "🌅" if m["session"] == "Pre" else "🌙"
-                html += (
-                    f'<div class="mover-cell mover-{cls}">'
-                    f'<div class="mover-sym">{icon} {m["sym"]}</div>'
-                    f'<div class="mover-pct">{arrow} {m["pct"]:+.2f}%</div>'
-                    f'<div class="mover-price">{m["price"]:,.2f}</div>'
-                    f'</div>'
-                )
-            html += "</div>"
-            return html
-
-        if not pm_gainers and not pm_losers:
-            st.info("ตอนนี้ยังไม่มีการเคลื่อนไหวใน Pre/After-Hours (อาจเป็นช่วงตลาดเปิดหรือดึก ๆ)")
-        else:
+        # Always show some preview — gainers + losers if both, otherwise just one side
+        if pm_gainers and pm_losers:
             pm1, pm2 = st.columns(2)
-            if pm_gainers:
-                with pm1:
-                    st.markdown("**🟢 ขึ้นมากสุด (นอกเวลา)**")
-                    st.markdown(_pm_html(pm_gainers, "up"), unsafe_allow_html=True)
-            if pm_losers:
-                with pm2:
-                    st.markdown("**🔴 ลงมากสุด (นอกเวลา)**")
-                    st.markdown(_pm_html(pm_losers, "down"), unsafe_allow_html=True)
+            with pm1:
+                st.markdown("**🟢 ขึ้นมากสุด**")
+                st.markdown(_pm_html(pm_gainers), unsafe_allow_html=True)
+            with pm2:
+                st.markdown("**🔴 ลงมากสุด**")
+                st.markdown(_pm_html(pm_losers), unsafe_allow_html=True)
+        elif pm_gainers:
+            st.markdown("**🟢 หุ้นที่ขึ้นใน Pre/After-Hours**")
+            st.markdown(_pm_html(pm_gainers + pm_losers), unsafe_allow_html=True)
+        elif pm_losers:
+            st.markdown("**🔴 หุ้นที่ลงใน Pre/After-Hours**")
+            st.markdown(_pm_html(pm_losers), unsafe_allow_html=True)
+        else:
+            # All flat (pct == 0) — still show preview
+            st.markdown("**📋 รายการ Pre/After-Hours ล่าสุด**")
+            st.markdown(_pm_html(pm_sorted[:12]), unsafe_allow_html=True)
 
-            # Quick-pick for top pre-market gainers
-            all_pm = (pm_gainers + pm_losers)[:8]
-            if all_pm:
-                st.caption("คลิกเพื่อดูรายละเอียดเต็ม:")
-                pm_cols = st.columns(min(8, len(all_pm)))
-                for i, m in enumerate(all_pm):
-                    if pm_cols[i].button(m["sym"], key=f"pm_pick_{m['sym']}", use_container_width=True):
-                        st.session_state.ticker = m["sym"]
-                        st.session_state.page = "📊 ดูหุ้น"
-                        st.rerun()
+        # Quick-pick (top 8 most active by |pct|)
+        quick = pm_sorted[:8]
+        st.caption(f"พบ {len(pm_data)} หุ้นที่มีข้อมูล · คลิกเพื่อดูรายละเอียดเต็ม:")
+        pm_cols = st.columns(min(8, len(quick)))
+        for i, m in enumerate(quick):
+            if pm_cols[i].button(m["sym"], key=f"pm_pick_{m['sym']}", use_container_width=True):
+                st.session_state.ticker = m["sym"]
+                st.session_state.page = "📊 ดูหุ้น"
+                st.rerun()
     else:
         st.info(
             "ตอนนี้ไม่มีข้อมูล Pre/After-Hours · "
-            "ลองกดปุ่ม **🔄 อัพเดตข้อมูล** ใน sidebar เพื่อโหลดใหม่ "
-            "(cache อาจค้างจากช่วงเวลาตลาดเปิดปกติ)"
+            "ลองกดปุ่ม **🔄 อัพเดตข้อมูล** ใน sidebar เพื่อโหลดใหม่ — "
+            "ถ้ายังไม่มีเลย แปลว่าตอนนี้เป็นช่วงตลาดปกติ / ดึก / วันหยุด"
         )
 
     # === Watchlist summary ===
