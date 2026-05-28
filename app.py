@@ -2214,6 +2214,60 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
     st.write("")
     st.markdown("### 🌅 Pre-Market / 🌙 After-Hours")
 
+    # Search any ticker
+    pm_search_col1, pm_search_col2 = st.columns([3, 1])
+    pm_search = pm_search_col1.text_input(
+        "ค้นหา ticker เพื่อดูราคา Pre-Market",
+        placeholder="พิมพ์ AAPL, NVDA, TSLA, BTC-USD … แล้วกด Enter",
+        label_visibility="collapsed",
+        key="pm_search",
+    )
+    pm_search_clear = pm_search_col2.button("เคลียร์ค้นหา", use_container_width=True, key="pm_clear")
+    if pm_search_clear:
+        st.session_state.pm_search = ""
+        st.rerun()
+
+    if pm_search:
+        sym = pm_search.upper().strip()
+        with st.spinner(f"กำลังเช็ค Pre/After-Hours ของ {sym}…"):
+            search_result = load_premarket_movers((sym,))
+        if search_result:
+            m = search_result[0]
+            arrow = "▲" if (m["pct"] or 0) >= 0 else "▼"
+            cls = "up" if (m["pct"] or 0) >= 0 else "down"
+            icon = "🌅" if m["session"] == "Pre" else "🌙"
+            session_label = "Pre-Market" if m["session"] == "Pre" else "After-Hours"
+            state_label = {
+                "PRE": "🌅 อยู่ในช่วง Pre-Market",
+                "PREPRE": "🌅 Pre-Market (เช้ามาก)",
+                "POST": "🌙 อยู่ในช่วง After-Hours",
+                "POSTPOST": "🌙 After-Hours (ดึก)",
+                "REGULAR": "🟢 ตลาดปกติเปิดอยู่",
+                "CLOSED": "⚪ ตลาดปิดอยู่",
+            }.get(m["state"], m["state"])
+            change_str = f"{m['change']:+.2f} " if m.get("change") is not None else ""
+            st.markdown(
+                f"""
+                <div class="hero" style="margin-bottom:0.7rem;">
+                    <div class="sym">{icon} {session_label} · {sym}</div>
+                    <div class="name">{m['price']:,.2f}</div>
+                    <div class="chip {cls}">{arrow} {change_str}({m['pct']:+.2f}%)</div>
+                    <div class="meta" style="margin-top:0.5rem;">สถานะตลาด: {state_label}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button(f"📊 ดูรายละเอียดเต็มของ {sym} →", use_container_width=True, key=f"pm_open_{sym}"):
+                st.session_state.ticker = sym
+                st.session_state.page = "📊 ดูหุ้น"
+                st.rerun()
+        else:
+            st.warning(
+                f"ไม่พบข้อมูล Pre/After-Hours สำหรับ **{sym}** · "
+                "อาจเป็นเพราะ: ticker ไม่ถูกต้อง, ไม่ใช่หุ้น US, หรือยังไม่มีคนเทรดในช่วงนี้"
+            )
+        st.write("")
+
     # Quick market status check (using first ticker we already have data for if possible)
     from datetime import datetime as _dt
     et_now = _dt.utcnow()  # use UTC, convert to ET
