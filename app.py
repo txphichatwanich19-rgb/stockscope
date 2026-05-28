@@ -2419,10 +2419,9 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
             pct = m.get("pct") or 0
             cls = "up" if pct >= 0 else "down"
             arrow = "▲" if pct >= 0 else "▼"
-            icon = "🌅" if m["session"] == "Pre" else "🌙"
             html += (
                 f'<div class="mover-cell mover-{cls}">'
-                f'<div class="mover-sym">{icon} {m["sym"]}</div>'
+                f'<div class="mover-sym">{m["sym"]}</div>'
                 f'<div class="mover-pct">{arrow} {pct:+.2f}%</div>'
                 f'<div class="mover-price">{m["price"]:,.2f}</div>'
                 f'</div>'
@@ -2436,29 +2435,43 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
         pm_gainers = [m for m in pm_sorted if (m.get("pct") or 0) > 0][:8]
         pm_losers = [m for m in pm_sorted if (m.get("pct") or 0) < 0][:8]
 
+        # Count session types for sub-label
+        pre_count = sum(1 for m in pm_data if m["session"] == "Pre")
+        post_count = sum(1 for m in pm_data if m["session"] == "After")
+        if pre_count and post_count:
+            session_note = f"🌅 Pre {pre_count} · 🌙 After {post_count}"
+        elif pre_count:
+            session_note = f"🌅 Pre-Market"
+        elif post_count:
+            session_note = f"🌙 After-Hours"
+        else:
+            session_note = ""
+
+        if session_note:
+            st.caption(f"📊 พบ {len(pm_data)} หุ้น · {session_note}")
+
         # Always show some preview — gainers + losers if both, otherwise just one side
         if pm_gainers and pm_losers:
             pm1, pm2 = st.columns(2)
             with pm1:
-                st.markdown("**🟢 ขึ้นมากสุด**")
+                st.markdown("**🟢 ราคาขึ้นมากที่สุด**")
                 st.markdown(_pm_html(pm_gainers), unsafe_allow_html=True)
             with pm2:
-                st.markdown("**🔴 ลงมากสุด**")
+                st.markdown("**🔴 ราคาลงมากที่สุด**")
                 st.markdown(_pm_html(pm_losers), unsafe_allow_html=True)
         elif pm_gainers:
-            st.markdown("**🟢 หุ้นที่ขึ้นใน Pre/After-Hours**")
+            st.markdown("**🟢 ราคาขึ้นมากที่สุด**")
             st.markdown(_pm_html(pm_gainers + pm_losers), unsafe_allow_html=True)
         elif pm_losers:
-            st.markdown("**🔴 หุ้นที่ลงใน Pre/After-Hours**")
+            st.markdown("**🔴 ราคาลงมากที่สุด**")
             st.markdown(_pm_html(pm_losers), unsafe_allow_html=True)
         else:
-            # All flat (pct == 0) — still show preview
-            st.markdown("**📋 รายการ Pre/After-Hours ล่าสุด**")
+            st.markdown("**📋 รายการล่าสุด**")
             st.markdown(_pm_html(pm_sorted[:12]), unsafe_allow_html=True)
 
         # Quick-pick (top 8 most active by |pct|)
         quick = pm_sorted[:8]
-        st.caption(f"พบ {len(pm_data)} หุ้นที่มีข้อมูล · คลิกเพื่อดูรายละเอียดเต็ม:")
+        st.caption("คลิกเพื่อดูรายละเอียดเต็ม:")
         pm_cols = st.columns(min(8, len(quick)))
         for i, m in enumerate(quick):
             if pm_cols[i].button(m["sym"], key=f"pm_pick_{m['sym']}", use_container_width=True):
