@@ -168,22 +168,16 @@ st.markdown(
         margin-bottom: 0.25rem;
     }
 
-    /* Hero card — aurora glass */
+    /* Hero card — solid premium */
     .hero {
-        background:
-            radial-gradient(400px 250px at 90% 0%, rgba(190,242,100,0.12), transparent 70%),
-            radial-gradient(500px 350px at 10% 100%, rgba(59,130,246,0.15), transparent 65%),
-            linear-gradient(180deg, rgba(19,24,56,0.85) 0%, rgba(14,19,57,0.85) 100%);
-        backdrop-filter: blur(14px);
-        border: 1px solid rgba(190,242,100,0.18);
+        background: #1a1f3d;
+        border: 1px solid #2b3060;
         border-radius: 22px;
         padding: 2rem 2.2rem;
         margin-bottom: 1rem;
         box-shadow:
             0 1px 2px rgba(0,0,0,0.4),
-            0 20px 50px -10px rgba(59,130,246,0.18),
-            0 0 80px rgba(190,242,100,0.04),
-            inset 0 1px 0 rgba(255,255,255,0.05);
+            0 20px 50px -10px rgba(0,0,0,0.4);
         position: relative;
         overflow: hidden;
         transition: all 0.3s;
@@ -336,11 +330,10 @@ st.markdown(
     .ext-hours .ext-chip.up   { background: rgba(190,242,100,0.12); color: #d9f99d; border-color: rgba(190,242,100,0.35); }
     .ext-hours .ext-chip.down { background: rgba(251,113,133,0.12); color: #fda4af; border-color: rgba(251,113,133,0.35); }
 
-    /* Stat tiles — glass aurora */
+    /* Stat tiles — solid distinct */
     .tile {
-        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(190,242,100,0.1);
+        background: #1a1f3d;
+        border: 1px solid #2b3060;
         border-radius: 16px;
         padding: 1.15rem 1.3rem;
         height: 100%;
@@ -407,11 +400,10 @@ st.markdown(
         box-shadow: 0 0 20px rgba(190,242,100,0.15);
     }
 
-    /* News cards — glass dark */
+    /* News cards — solid */
     .news-card {
-        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(190,242,100,0.1);
+        background: #1a1f3d;
+        border: 1px solid #2b3060;
         border-radius: 16px;
         padding: 1.2rem 1.35rem;
         margin-bottom: 0.7rem;
@@ -436,7 +428,7 @@ st.markdown(
     .news-card .meta   { color: #94a8d4; font-size: 0.75rem; margin-top: 0.45rem; letter-spacing: 0.04em; }
     .news-card .summary{ color: #c8d3ef; font-size: 0.9rem; margin-top: 0.6rem; line-height: 1.65; }
 
-    /* Verdict card — aurora glass */
+    /* Verdict card — solid */
     .verdict {
         border-radius: 18px;
         padding: 1.8rem 2rem;
@@ -446,9 +438,8 @@ st.markdown(
         text-align: center;
         letter-spacing: -0.02em;
         margin-bottom: 1rem;
-        background: linear-gradient(180deg, rgba(19,24,56,0.8) 0%, rgba(14,19,57,0.8) 100%);
-        backdrop-filter: blur(14px);
-        border: 1px solid rgba(190,242,100,0.18);
+        background: #1a1f3d;
+        border: 1px solid #2b3060;
         position: relative;
         overflow: hidden;
     }
@@ -463,10 +454,10 @@ st.markdown(
     .verdict.flat { color: #94a8d4; }
     .verdict.flat::before { background: linear-gradient(90deg, transparent, #94a8d4, transparent); }
 
-    /* Buttons — glass pill aurora */
+    /* Buttons — solid distinct */
     .stButton > button {
-        background: linear-gradient(180deg, rgba(19,24,56,0.8) 0%, rgba(14,19,57,0.8) 100%);
-        border: 1px solid rgba(190,242,100,0.2);
+        background: #1e2447;
+        border: 1px solid #3b3f6b;
         color: #e0e9ff;
         font-weight: 600;
         font-size: 0.88rem;
@@ -474,10 +465,10 @@ st.markdown(
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .stButton > button:hover {
-        background: linear-gradient(180deg, rgba(190,242,100,0.12) 0%, rgba(59,130,246,0.1) 100%);
-        border-color: rgba(190,242,100,0.5);
+        background: #2a3160;
+        border-color: #bef264;
         color: #bef264;
-        box-shadow: 0 0 20px rgba(190,242,100,0.18);
+        box-shadow: 0 0 16px rgba(190,242,100,0.18);
         transform: translateY(-1px);
     }
     .stButton > button:active { transform: translateY(0); }
@@ -532,9 +523,8 @@ st.markdown(
         margin-bottom: 0.85rem;
     }
     .macro-tile {
-        background: linear-gradient(180deg, rgba(19,24,56,0.6) 0%, rgba(14,19,57,0.6) 100%);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(190,242,100,0.1);
+        background: #1a1f3d;
+        border: 1px solid #2b3060;
         border-radius: 12px;
         padding: 0.75rem 0.95rem;
         transition: all 0.2s;
@@ -583,25 +573,24 @@ st.markdown(
         margin-bottom: 0.55rem;
     }
     .mover-cell {
-        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(190,242,100,0.1);
         border-radius: 12px;
         padding: 0.85rem 1rem;
         transition: all 0.2s;
+        border: 1px solid;
     }
     .mover-cell:hover {
         transform: translateY(-2px);
-        border-color: rgba(190,242,100,0.3);
-        box-shadow: 0 0 20px rgba(190,242,100,0.08);
+        filter: brightness(1.15);
     }
-    .mover-cell.mover-up   {
+    .mover-cell.mover-up {
+        background: #1a3a0d;
+        border-color: #65a30d;
         border-top: 3px solid #bef264;
-        box-shadow: 0 -3px 12px -3px rgba(190,242,100,0.25);
     }
     .mover-cell.mover-down {
+        background: #3a0d18;
+        border-color: #be123c;
         border-top: 3px solid #fb7185;
-        box-shadow: 0 -3px 12px -3px rgba(251,113,133,0.25);
     }
     .mover-sym {
         font-family: 'JetBrains Mono', monospace;
@@ -615,12 +604,12 @@ st.markdown(
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.01em;
     }
-    .mover-up .mover-pct   { color: #d9f99d; }
-    .mover-down .mover-pct { color: #fda4af; }
+    .mover-up .mover-pct   { color: #bef264; }
+    .mover-down .mover-pct { color: #fb7185; }
     .mover-price {
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.78rem;
-        color: #94a8d4;
+        color: #c8d3ef;
         margin-top: 0.15rem;
         font-variant-numeric: tabular-nums;
     }
@@ -678,9 +667,8 @@ st.markdown(
 
     /* 52-week position gauge */
     .pos52 {
-        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(190,242,100,0.12);
+        background: #1a1f3d;
+        border: 1px solid #2b3060;
         border-radius: 14px;
         padding: 0.95rem 1.15rem;
         margin-bottom: 0.7rem;
@@ -734,9 +722,8 @@ st.markdown(
     /* News overall sentiment */
     .sent-overall {
         display: flex; justify-content: space-between; align-items: center;
-        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(190,242,100,0.12);
+        background: #1a1f3d;
+        border: 1px solid #2b3060;
         border-radius: 12px;
         padding: 0.75rem 1rem;
         margin-bottom: 0.7rem;
@@ -755,11 +742,10 @@ st.markdown(
         color: #94a8d4;
     }
 
-    /* Level tile — aurora glass */
+    /* Level tile — solid distinct */
     .level-tile {
-        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(190,242,100,0.12);
+        background: #1a1f3d;
+        border: 1px solid #2b3060;
         border-radius: 14px;
         padding: 1rem 1.1rem;
         height: 100%;
@@ -818,9 +804,8 @@ st.markdown(
 
     /* Price ladder (above chart) */
     .lv-ladder {
-        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(190,242,100,0.12);
+        background: #1a1f3d;
+        border: 1px solid #2b3060;
         border-radius: 14px;
         padding: 0.9rem 1.1rem;
         margin-bottom: 0.7rem;
@@ -2327,14 +2312,14 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
         sectors_sorted = sorted(sectors, key=lambda x: x["d1"], reverse=True)
 
         def _sec_color(pct: float) -> tuple[str, str, str]:
-            # (border_color, bg_gradient, text_color)
-            if pct >= 2:    return "rgba(190,242,100,0.5)", "linear-gradient(135deg, rgba(190,242,100,0.18) 0%, rgba(19,24,56,0.7) 100%)", "#d9f99d"
-            if pct >= 1:    return "rgba(190,242,100,0.35)", "linear-gradient(135deg, rgba(190,242,100,0.10) 0%, rgba(19,24,56,0.7) 100%)", "#d9f99d"
-            if pct >= 0.3:  return "rgba(190,242,100,0.22)", "linear-gradient(135deg, rgba(190,242,100,0.05) 0%, rgba(19,24,56,0.7) 100%)", "#bef264"
-            if pct > -0.3:  return "rgba(148,168,212,0.2)", "rgba(19,24,56,0.7)", "#94a8d4"
-            if pct > -1:    return "rgba(251,113,133,0.25)", "linear-gradient(135deg, rgba(251,113,133,0.05) 0%, rgba(19,24,56,0.7) 100%)", "#fda4af"
-            if pct > -2:    return "rgba(251,113,133,0.4)", "linear-gradient(135deg, rgba(251,113,133,0.10) 0%, rgba(19,24,56,0.7) 100%)", "#fda4af"
-            return "rgba(251,113,133,0.55)", "linear-gradient(135deg, rgba(251,113,133,0.18) 0%, rgba(19,24,56,0.7) 100%)", "#fb7185"
+            # (border, solid bg, text)  — distinct, not blended
+            if pct >= 2:    return "#84cc16", "#1a3a0d", "#bef264"
+            if pct >= 1:    return "#65a30d", "#1f2e0d", "#d9f99d"
+            if pct >= 0.3:  return "#4d7c0f", "#1c260d", "#d9f99d"
+            if pct > -0.3:  return "#475569", "#1e293b", "#94a3b8"
+            if pct > -1:    return "#9f1239", "#2a0d14", "#fda4af"
+            if pct > -2:    return "#be123c", "#3a0d18", "#fda4af"
+            return "#dc2626", "#4a0d18", "#fb7185"
 
         st.caption("คลิกชื่อ ETF เพื่อดูรายละเอียดเต็ม · สี = % เปลี่ยนแปลงวันนี้")
         hm_html = '<div class="sector-grid">'
