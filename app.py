@@ -84,9 +84,11 @@ st.markdown(
 
     .stApp {
         background:
-            radial-gradient(1200px 600px at 90% 0%, rgba(91, 33, 182, 0.05), transparent 50%),
-            radial-gradient(1000px 500px at 10% 100%, rgba(234, 88, 12, 0.03), transparent 55%),
-            #fafaf7;
+            radial-gradient(1200px 600px at 75% -5%, rgba(190,242,100,0.10), transparent 55%),
+            radial-gradient(900px 500px at 10% 20%, rgba(59,130,246,0.22), transparent 55%),
+            radial-gradient(1100px 550px at 90% 100%, rgba(37,99,235,0.18), transparent 60%),
+            radial-gradient(700px 400px at 30% 90%, rgba(132,204,22,0.06), transparent 60%),
+            linear-gradient(180deg, #0a0f2e 0%, #0a0d24 100%);
     }
 
     header[data-testid="stHeader"] { background: transparent; }
@@ -95,37 +97,35 @@ st.markdown(
         max-width: 1380px;
     }
 
-    /* Sidebar — warm cream */
+    /* Sidebar — deep night blue */
     [data-testid="stSidebar"] {
-        background: #fdfcfa;
-        border-right: 1px solid rgba(12,10,9,0.06);
+        background:
+            radial-gradient(400px 300px at 0% 20%, rgba(59,130,246,0.12), transparent 60%),
+            linear-gradient(180deg, #0e1339 0%, #0a0f2e 100%);
+        border-right: 1px solid rgba(190,242,100,0.1);
     }
 
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: translateY(0); }
     }
+    @keyframes shimmer {
+        0%, 100% { opacity: 0.85; }
+        50%      { opacity: 1; }
+    }
     .hero, .tile, .pos52, .news-card, .level-tile, .verdict,
     .macro-tile, .sector-cell, .mover-cell, .sent-overall, .lv-ladder {
         animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Global typography */
-    body, .stMarkdown p, label { color: #1c1917; }
+    /* Global typography — light on dark */
+    body, .stMarkdown p, label { color: #e0e9ff; }
     h1, h2, h3, h4, h5, h6, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-        color: #0c0a09;
+        color: #f0f7ff;
         letter-spacing: -0.025em;
         font-weight: 700;
     }
-    .stCaption, [data-testid="stCaptionContainer"] { color: #78716c !important; }
-
-    /* Section divider accent */
-    .accent-line {
-        height: 2px;
-        background: linear-gradient(90deg, #5b21b6 0%, transparent 100%);
-        width: 60px;
-        margin-bottom: 0.5rem;
-    }
+    .stCaption, [data-testid="stCaptionContainer"] { color: #94a8d4 !important; }
 
     /* Sidebar */
     [data-testid="stSidebar"] {
@@ -136,42 +136,45 @@ st.markdown(
         margin-bottom: 0.25rem;
     }
 
-    /* Hero card — bold premium */
+    /* Hero card — aurora glass */
     .hero {
-        background: #ffffff;
-        border: 1px solid rgba(12,10,9,0.05);
-        border-radius: 24px;
-        padding: 2.2rem 2.4rem;
+        background:
+            radial-gradient(400px 250px at 90% 0%, rgba(190,242,100,0.12), transparent 70%),
+            radial-gradient(500px 350px at 10% 100%, rgba(59,130,246,0.15), transparent 65%),
+            linear-gradient(180deg, rgba(19,24,56,0.85) 0%, rgba(14,19,57,0.85) 100%);
+        backdrop-filter: blur(14px);
+        border: 1px solid rgba(190,242,100,0.18);
+        border-radius: 22px;
+        padding: 2rem 2.2rem;
         margin-bottom: 1rem;
         box-shadow:
-            0 1px 2px rgba(12,10,9,0.04),
-            0 12px 32px -12px rgba(91,33,182,0.08),
-            0 24px 64px -24px rgba(12,10,9,0.08);
+            0 1px 2px rgba(0,0,0,0.4),
+            0 20px 50px -10px rgba(59,130,246,0.18),
+            0 0 80px rgba(190,242,100,0.04),
+            inset 0 1px 0 rgba(255,255,255,0.05);
         position: relative;
         overflow: hidden;
-        transition: transform 0.3s, box-shadow 0.3s;
+        transition: all 0.3s;
     }
-    .hero::after {
+    .hero::before {
         content: '';
-        position: absolute;
-        top: 0; right: 0;
-        width: 280px; height: 280px;
-        background: radial-gradient(circle, rgba(91,33,182,0.06) 0%, transparent 70%);
-        pointer-events: none;
+        position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(190,242,100,0.6) 50%, transparent 100%);
     }
     .hero:hover {
-        transform: translateY(-2px);
+        border-color: rgba(190,242,100,0.35);
         box-shadow:
-            0 1px 2px rgba(12,10,9,0.04),
-            0 20px 40px -12px rgba(91,33,182,0.12),
-            0 32px 80px -24px rgba(12,10,9,0.12);
+            0 1px 2px rgba(0,0,0,0.4),
+            0 28px 64px -10px rgba(59,130,246,0.28),
+            0 0 100px rgba(190,242,100,0.1);
     }
     .hero .sym {
         display: inline-block;
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.72rem;
-        color: #5b21b6;
-        background: rgba(91,33,182,0.08);
+        color: #bef264;
+        background: rgba(190,242,100,0.1);
+        border: 1px solid rgba(190,242,100,0.3);
         letter-spacing: 0.2em;
         text-transform: uppercase;
         font-weight: 700;
@@ -183,14 +186,14 @@ st.markdown(
         font-family: 'Instrument Serif', serif !important;
         font-size: 2.6rem;
         font-weight: 400;
-        color: #0c0a09;
+        color: #f0f7ff;
         margin: 0.6rem 0 0.3rem 0;
         letter-spacing: -0.025em;
         line-height: 1.05;
         position: relative; z-index: 1;
     }
     .hero .meta {
-        color: #78716c;
+        color: #94a8d4;
         font-size: 0.85rem;
         font-weight: 500;
         position: relative; z-index: 1;
@@ -198,7 +201,10 @@ st.markdown(
     .hero .price {
         font-size: 4rem;
         font-weight: 800;
-        color: #0c0a09;
+        background: linear-gradient(180deg, #f0f7ff 0%, #bef264 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         letter-spacing: -0.05em;
         line-height: 1;
         font-variant-numeric: tabular-nums;
@@ -207,7 +213,7 @@ st.markdown(
     .hero .hero-thb {
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.92rem;
-        color: #78716c;
+        color: #94a8d4;
         font-weight: 500;
         margin-top: 0.5rem;
         position: relative; z-index: 1;
@@ -224,37 +230,51 @@ st.markdown(
         font-variant-numeric: tabular-nums;
         position: relative; z-index: 1;
     }
-    .chip.up    { background: #047857; color: #ecfdf5; }
-    .chip.down  { background: #be123c; color: #fff1f2; }
-    .chip.flat  { background: #44403c; color: #fafaf9; }
+    .chip.up    {
+        background: rgba(190,242,100,0.12);
+        color: #d9f99d;
+        border: 1px solid rgba(190,242,100,0.4);
+        box-shadow: 0 0 20px rgba(190,242,100,0.15);
+    }
+    .chip.down  {
+        background: rgba(251,113,133,0.12);
+        color: #fda4af;
+        border: 1px solid rgba(251,113,133,0.4);
+        box-shadow: 0 0 20px rgba(251,113,133,0.15);
+    }
+    .chip.flat  {
+        background: rgba(148,168,212,0.1);
+        color: #cbd5e1;
+        border: 1px solid rgba(148,168,212,0.3);
+    }
 
     /* Market session badge + extended hours */
     .session-badge {
         display: inline-block;
         font-size: 0.74rem;
-        font-weight: 600;
+        font-weight: 700;
         padding: 0.22rem 0.65rem;
         border-radius: 999px;
         margin-top: 0.6rem;
         margin-left: 0.4rem;
         border: 1px solid transparent;
     }
-    .session-open   { background: #f0fdf4; color: #166534; border-color: #d1fae5; }
-    .session-pre    { background: #fffbeb; color: #92400e; border-color: #fde68a; }
-    .session-post   { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
-    .session-closed { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+    .session-open   { background: rgba(190,242,100,0.12); color: #d9f99d; border-color: rgba(190,242,100,0.35); }
+    .session-pre    { background: rgba(251,191,36,0.12); color: #fde68a; border-color: rgba(251,191,36,0.35); }
+    .session-post   { background: rgba(196,181,253,0.12); color: #c4b5fd; border-color: rgba(196,181,253,0.35); }
+    .session-closed { background: rgba(148,168,212,0.12); color: #cbd5e1; border-color: rgba(148,168,212,0.3); }
 
     .ext-hours {
         margin-top: 0.85rem;
         padding-top: 0.85rem;
-        border-top: 1px dashed rgba(15,23,42,0.1);
+        border-top: 1px dashed rgba(190,242,100,0.18);
         text-align: right;
     }
     .ext-hours .ext-head {
         font-size: 0.72rem;
-        font-weight: 600;
-        color: #64748b;
-        letter-spacing: 0.08em;
+        font-weight: 700;
+        color: #94a8d4;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
         margin-bottom: 0.35rem;
     }
@@ -267,63 +287,63 @@ st.markdown(
     .ext-hours .ext-price {
         font-family: 'JetBrains Mono', monospace;
         font-size: 1.4rem;
-        font-weight: 700;
-        color: #0f172a;
+        font-weight: 800;
+        color: #f0f7ff;
         letter-spacing: -0.01em;
         font-variant-numeric: tabular-nums;
     }
     .ext-hours .ext-chip {
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.78rem;
-        font-weight: 600;
+        font-weight: 700;
         padding: 0.18rem 0.55rem;
         border-radius: 999px;
         border: 1px solid transparent;
         font-variant-numeric: tabular-nums;
     }
-    .ext-hours .ext-chip.up   { background: #f0fdf4; color: #166534; border-color: #d1fae5; }
-    .ext-hours .ext-chip.down { background: #fef2f2; color: #991b1b; border-color: #fee2e2; }
+    .ext-hours .ext-chip.up   { background: rgba(190,242,100,0.12); color: #d9f99d; border-color: rgba(190,242,100,0.35); }
+    .ext-hours .ext-chip.down { background: rgba(251,113,133,0.12); color: #fda4af; border-color: rgba(251,113,133,0.35); }
 
-    /* Stat tiles — bold + restrained */
+    /* Stat tiles — glass aurora */
     .tile {
-        background: #ffffff;
-        border: 1px solid rgba(12,10,9,0.05);
+        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(190,242,100,0.1);
         border-radius: 16px;
-        padding: 1.2rem 1.35rem;
+        padding: 1.15rem 1.3rem;
         height: 100%;
-        box-shadow: 0 1px 2px rgba(12,10,9,0.03);
         transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         position: relative;
     }
     .tile::before {
         content: '';
         position: absolute; top: 0; left: 0;
-        width: 24px; height: 2px;
-        background: #5b21b6;
+        width: 28px; height: 2px;
+        background: linear-gradient(90deg, #bef264, transparent);
         border-radius: 0 0 2px 0;
     }
     .tile:hover {
         transform: translateY(-2px);
-        border-color: rgba(91,33,182,0.2);
-        box-shadow: 0 8px 24px -8px rgba(91,33,182,0.12);
+        border-color: rgba(190,242,100,0.3);
+        box-shadow: 0 8px 24px -8px rgba(59,130,246,0.25), 0 0 30px rgba(190,242,100,0.06);
     }
     .tile .label {
-        color: #78716c;
+        color: #94a8d4;
         font-size: 0.7rem;
         font-weight: 600;
         letter-spacing: 0.14em;
         text-transform: uppercase;
     }
     .tile .value {
-        color: #0c0a09;
-        font-size: 1.55rem;
+        color: #f0f7ff;
+        font-size: 1.5rem;
         font-weight: 800;
         margin-top: 0.5rem;
         letter-spacing: -0.025em;
         font-variant-numeric: tabular-nums;
     }
 
-    /* Tabs — pill-style with accent on active */
+    /* Tabs — pill style with chartreuse active */
     .stTabs [data-baseweb="tab-list"] {
         gap: 0.4rem;
         background: transparent;
@@ -333,56 +353,58 @@ st.markdown(
         margin-bottom: 1rem;
     }
     .stTabs [data-baseweb="tab"] {
-        background: #ffffff;
-        border: 1px solid rgba(12,10,9,0.06);
+        background: rgba(19,24,56,0.6);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(190,242,100,0.12);
         border-radius: 999px;
         padding: 0.55rem 1.25rem;
-        color: #57534e;
+        color: #94a8d4;
         font-weight: 600;
         font-size: 0.9rem;
         transition: all 0.25s;
     }
     .stTabs [data-baseweb="tab"]:hover {
-        color: #0c0a09;
-        border-color: rgba(91,33,182,0.3);
+        color: #f0f7ff;
+        border-color: rgba(190,242,100,0.4);
     }
     .stTabs [aria-selected="true"] {
-        background: #0c0a09 !important;
-        color: #fafaf7 !important;
-        border-color: #0c0a09 !important;
+        background: linear-gradient(135deg, rgba(190,242,100,0.2), rgba(59,130,246,0.15)) !important;
+        color: #bef264 !important;
+        border-color: rgba(190,242,100,0.5) !important;
         font-weight: 700;
+        box-shadow: 0 0 20px rgba(190,242,100,0.15);
     }
 
-    /* News cards — refined editorial */
+    /* News cards — glass dark */
     .news-card {
-        background: #ffffff;
-        border: 1px solid rgba(12,10,9,0.06);
+        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(190,242,100,0.1);
         border-radius: 16px;
         padding: 1.2rem 1.35rem;
         margin-bottom: 0.7rem;
         transition: all 0.25s;
-        box-shadow: 0 1px 2px rgba(12,10,9,0.03);
     }
     .news-card:hover {
-        border-color: rgba(91,33,182,0.3);
-        box-shadow: 0 8px 24px -8px rgba(91,33,182,0.12);
+        border-color: rgba(190,242,100,0.35);
+        box-shadow: 0 0 30px rgba(190,242,100,0.1), 0 8px 24px -8px rgba(59,130,246,0.2);
         transform: translateY(-2px);
     }
     .news-card .title {
         font-family: 'Instrument Serif', serif !important;
-        color: #0c0a09;
+        color: #f0f7ff;
         font-weight: 400;
         font-size: 1.2rem;
         line-height: 1.35;
         letter-spacing: -0.015em;
     }
-    .news-card .title a { color: #0c0a09; text-decoration: none; }
-    .news-card .title a:hover { color: #5b21b6; }
-    .news-card .orig   { color: #a8a29e; font-size: 0.8rem; margin-top: 0.3rem; font-style: italic; }
-    .news-card .meta   { color: #78716c; font-size: 0.75rem; margin-top: 0.45rem; letter-spacing: 0.04em; }
-    .news-card .summary{ color: #44403c; font-size: 0.9rem; margin-top: 0.6rem; line-height: 1.65; }
+    .news-card .title a { color: #f0f7ff; text-decoration: none; }
+    .news-card .title a:hover { color: #bef264; }
+    .news-card .orig   { color: #6b7aa8; font-size: 0.8rem; margin-top: 0.3rem; font-style: italic; }
+    .news-card .meta   { color: #94a8d4; font-size: 0.75rem; margin-top: 0.45rem; letter-spacing: 0.04em; }
+    .news-card .summary{ color: #c8d3ef; font-size: 0.9rem; margin-top: 0.6rem; line-height: 1.65; }
 
-    /* Verdict card — bold confident */
+    /* Verdict card — aurora glass */
     .verdict {
         border-radius: 18px;
         padding: 1.8rem 2rem;
@@ -392,9 +414,9 @@ st.markdown(
         text-align: center;
         letter-spacing: -0.02em;
         margin-bottom: 1rem;
-        background: #ffffff;
-        border: 1px solid rgba(12,10,9,0.06);
-        box-shadow: 0 1px 2px rgba(12,10,9,0.03), 0 12px 32px -12px rgba(12,10,9,0.1);
+        background: linear-gradient(180deg, rgba(19,24,56,0.8) 0%, rgba(14,19,57,0.8) 100%);
+        backdrop-filter: blur(14px);
+        border: 1px solid rgba(190,242,100,0.18);
         position: relative;
         overflow: hidden;
     }
@@ -402,63 +424,68 @@ st.markdown(
         content: '';
         position: absolute; top: 0; left: 0; right: 0; height: 4px;
     }
-    .verdict.bull { color: #047857; }
-    .verdict.bull::before { background: linear-gradient(90deg, #047857, #10b981, #047857); }
-    .verdict.bear { color: #be123c; }
-    .verdict.bear::before { background: linear-gradient(90deg, #be123c, #f43f5e, #be123c); }
-    .verdict.flat { color: #57534e; }
-    .verdict.flat::before { background: linear-gradient(90deg, #57534e, #a8a29e, #57534e); }
+    .verdict.bull { color: #d9f99d; box-shadow: 0 0 40px rgba(190,242,100,0.18); }
+    .verdict.bull::before { background: linear-gradient(90deg, transparent, #bef264, #84cc16, #bef264, transparent); }
+    .verdict.bear { color: #fda4af; box-shadow: 0 0 40px rgba(251,113,133,0.18); }
+    .verdict.bear::before { background: linear-gradient(90deg, transparent, #fda4af, #f43f5e, #fda4af, transparent); }
+    .verdict.flat { color: #94a8d4; }
+    .verdict.flat::before { background: linear-gradient(90deg, transparent, #94a8d4, transparent); }
 
-    /* Buttons — pill style with subtle accent */
+    /* Buttons — glass pill aurora */
     .stButton > button {
-        background: #ffffff;
-        border: 1px solid rgba(12,10,9,0.08);
-        color: #1c1917;
+        background: linear-gradient(180deg, rgba(19,24,56,0.8) 0%, rgba(14,19,57,0.8) 100%);
+        border: 1px solid rgba(190,242,100,0.2);
+        color: #e0e9ff;
         font-weight: 600;
         font-size: 0.88rem;
         border-radius: 10px;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        box-shadow: 0 1px 2px rgba(12,10,9,0.03);
     }
     .stButton > button:hover {
-        background: #0c0a09;
-        border-color: #0c0a09;
-        color: #fafaf7;
-        box-shadow: 0 4px 12px -2px rgba(12,10,9,0.18);
+        background: linear-gradient(180deg, rgba(190,242,100,0.12) 0%, rgba(59,130,246,0.1) 100%);
+        border-color: rgba(190,242,100,0.5);
+        color: #bef264;
+        box-shadow: 0 0 20px rgba(190,242,100,0.18);
         transform: translateY(-1px);
     }
     .stButton > button:active { transform: translateY(0); }
 
-    /* Brand — dramatic logo */
+    /* Brand — aurora logo */
     .brand {
         display: flex; align-items: center; gap: 0.75rem;
         padding: 0.35rem 0 1.3rem 0;
-        border-bottom: 1px solid rgba(12,10,9,0.06);
+        border-bottom: 1px solid rgba(190,242,100,0.15);
         margin-bottom: 1.1rem;
     }
     .brand .logo {
         width: 44px; height: 44px;
         border-radius: 12px;
-        background: #0c0a09;
-        color: #fafaf7;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #bef264 100%);
+        color: #0a0f2e;
         display: flex; align-items: center; justify-content: center;
         font-family: 'Instrument Serif', serif;
         font-size: 1.7rem;
         font-weight: 400;
         font-style: italic;
-        box-shadow: 0 2px 6px rgba(12,10,9,0.15);
+        box-shadow:
+            0 0 20px rgba(190,242,100,0.3),
+            0 4px 12px -2px rgba(59,130,246,0.4),
+            inset 0 1px 0 rgba(255,255,255,0.25);
     }
     .brand .name {
         font-family: 'Instrument Serif', serif !important;
         font-weight: 400;
         font-size: 1.4rem;
-        color: #0c0a09;
+        background: linear-gradient(90deg, #f0f7ff 0%, #bef264 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         letter-spacing: -0.01em;
         line-height: 1;
     }
     .brand .sub  {
         font-size: 0.65rem;
-        color: #5b21b6;
+        color: #bef264;
         letter-spacing: 0.2em;
         text-transform: uppercase;
         font-weight: 700;
@@ -473,20 +500,20 @@ st.markdown(
         margin-bottom: 0.85rem;
     }
     .macro-tile {
-        background: #ffffff;
-        border: 1px solid rgba(12,10,9,0.05);
+        background: linear-gradient(180deg, rgba(19,24,56,0.6) 0%, rgba(14,19,57,0.6) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(190,242,100,0.1);
         border-radius: 12px;
         padding: 0.75rem 0.95rem;
-        box-shadow: 0 1px 2px rgba(12,10,9,0.03);
         transition: all 0.2s;
     }
     .macro-tile:hover {
-        border-color: rgba(91,33,182,0.25);
-        box-shadow: 0 4px 10px -2px rgba(91,33,182,0.08);
+        border-color: rgba(190,242,100,0.3);
+        box-shadow: 0 0 20px rgba(190,242,100,0.08);
     }
     .macro-label {
         font-size: 0.66rem; font-weight: 700;
-        color: #78716c; letter-spacing: 0.14em;
+        color: #94a8d4; letter-spacing: 0.14em;
         text-transform: uppercase;
     }
     .macro-row {
@@ -496,7 +523,7 @@ st.markdown(
     .macro-price {
         font-family: 'JetBrains Mono', monospace;
         font-size: 1.05rem; font-weight: 800;
-        color: #0c0a09;
+        color: #f0f7ff;
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.01em;
     }
@@ -505,9 +532,10 @@ st.markdown(
         font-size: 0.72rem; font-weight: 700;
         padding: 0.18rem 0.55rem; border-radius: 4px;
         font-variant-numeric: tabular-nums;
+        border: 1px solid transparent;
     }
-    .macro-chip.up   { background: #047857; color: #ffffff; }
-    .macro-chip.down { background: #be123c; color: #ffffff; }
+    .macro-chip.up   { background: rgba(190,242,100,0.15); color: #d9f99d; border-color: rgba(190,242,100,0.35); }
+    .macro-chip.down { background: rgba(251,113,133,0.15); color: #fda4af; border-color: rgba(251,113,133,0.35); }
 
     @media (max-width: 768px) {
         .macro-bar { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
@@ -523,23 +551,30 @@ st.markdown(
         margin-bottom: 0.55rem;
     }
     .mover-cell {
-        background: #ffffff;
-        border: 1px solid rgba(12,10,9,0.06);
+        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(190,242,100,0.1);
         border-radius: 12px;
         padding: 0.85rem 1rem;
-        box-shadow: 0 1px 2px rgba(12,10,9,0.03);
         transition: all 0.2s;
     }
     .mover-cell:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px -4px rgba(12,10,9,0.08);
+        border-color: rgba(190,242,100,0.3);
+        box-shadow: 0 0 20px rgba(190,242,100,0.08);
     }
-    .mover-cell.mover-up   { border-top: 3px solid #047857; }
-    .mover-cell.mover-down { border-top: 3px solid #be123c; }
+    .mover-cell.mover-up   {
+        border-top: 3px solid #bef264;
+        box-shadow: 0 -3px 12px -3px rgba(190,242,100,0.25);
+    }
+    .mover-cell.mover-down {
+        border-top: 3px solid #fb7185;
+        box-shadow: 0 -3px 12px -3px rgba(251,113,133,0.25);
+    }
     .mover-sym {
         font-family: 'JetBrains Mono', monospace;
         font-weight: 700; font-size: 0.85rem;
-        color: #0c0a09;
+        color: #f0f7ff;
     }
     .mover-pct {
         font-family: 'JetBrains Mono', monospace;
@@ -548,12 +583,12 @@ st.markdown(
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.01em;
     }
-    .mover-up .mover-pct   { color: #047857; }
-    .mover-down .mover-pct { color: #be123c; }
+    .mover-up .mover-pct   { color: #d9f99d; }
+    .mover-down .mover-pct { color: #fda4af; }
     .mover-price {
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.78rem;
-        color: #78716c;
+        color: #94a8d4;
         margin-top: 0.15rem;
         font-variant-numeric: tabular-nums;
     }
@@ -570,35 +605,39 @@ st.markdown(
     }
     .sector-cell {
         border: 1px solid;
-        border-radius: 10px;
-        padding: 0.7rem 0.85rem;
-        transition: transform 0.15s;
+        border-radius: 12px;
+        padding: 0.8rem 0.95rem;
+        backdrop-filter: blur(10px);
+        transition: all 0.2s;
     }
-    .sector-cell:hover { transform: translateY(-1px); }
+    .sector-cell:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 20px rgba(190,242,100,0.08);
+    }
     .sector-sym {
         font-family: 'JetBrains Mono', monospace;
         font-weight: 700;
-        font-size: 0.85rem;
-        color: #0f172a;
+        font-size: 0.88rem;
+        color: #f0f7ff;
     }
     .sector-name {
         font-size: 0.72rem;
-        color: #475569;
+        color: #94a8d4;
         margin-top: 0.1rem;
     }
     .sector-pct {
         font-family: 'JetBrains Mono', monospace;
-        font-weight: 700;
-        font-size: 1.15rem;
-        margin-top: 0.35rem;
+        font-weight: 800;
+        font-size: 1.2rem;
+        margin-top: 0.4rem;
         letter-spacing: -0.01em;
         font-variant-numeric: tabular-nums;
     }
     .sector-sub {
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.7rem;
-        color: #64748b;
-        margin-top: 0.1rem;
+        color: #94a8d4;
+        margin-top: 0.15rem;
         font-variant-numeric: tabular-nums;
     }
     @media (max-width: 768px) {
@@ -607,42 +646,44 @@ st.markdown(
 
     /* 52-week position gauge */
     .pos52 {
-        background: #ffffff;
-        border: 1px solid rgba(15,23,42,0.06);
+        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(190,242,100,0.12);
         border-radius: 14px;
-        padding: 0.85rem 1.1rem;
+        padding: 0.95rem 1.15rem;
         margin-bottom: 0.7rem;
-        box-shadow: 0 1px 2px rgba(15,23,42,0.03);
     }
     .pos52-head {
         display: flex; justify-content: space-between;
-        align-items: baseline; margin-bottom: 0.5rem;
+        align-items: baseline; margin-bottom: 0.6rem;
     }
     .pos52-title {
-        font-size: 0.78rem; font-weight: 600;
-        color: #64748b; letter-spacing: 0.1em;
+        font-size: 0.75rem; font-weight: 700;
+        color: #94a8d4; letter-spacing: 0.12em;
         text-transform: uppercase;
     }
     .pos52-pct {
         font-family: 'JetBrains Mono', monospace;
         font-weight: 700; font-size: 0.95rem;
-        color: #0f172a;
+        color: #bef264;
         font-variant-numeric: tabular-nums;
     }
     .pos52-track {
-        position: relative; height: 10px;
-        background: linear-gradient(90deg, #fee2e2 0%, #fef3c7 50%, #d1fae5 100%);
+        position: relative; height: 8px;
+        background: linear-gradient(90deg, rgba(251,113,133,0.5) 0%, rgba(148,168,212,0.3) 50%, rgba(190,242,100,0.6) 100%);
         border-radius: 999px; overflow: visible;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
     }
     .pos52-marker {
         position: absolute; top: 50%; transform: translate(-50%, -50%);
         width: 18px; height: 18px; border-radius: 50%;
-        background: #0f172a; border: 3px solid #ffffff;
-        box-shadow: 0 1px 3px rgba(15,23,42,0.25);
+        background: linear-gradient(135deg, #bef264 0%, #84cc16 100%);
+        border: 2px solid #0a0f2e;
+        box-shadow: 0 0 12px rgba(190,242,100,0.6);
     }
     .pos52-ends {
         display: flex; justify-content: space-between;
-        margin-top: 0.4rem; font-size: 0.78rem; color: #64748b;
+        margin-top: 0.55rem; font-size: 0.78rem; color: #94a8d4;
         font-family: 'JetBrains Mono', monospace;
         font-variant-numeric: tabular-nums;
     }
@@ -650,28 +691,28 @@ st.markdown(
     /* Generic mini-chip */
     .mini-chip {
         display: inline-flex; align-items: center;
-        padding: 0.18rem 0.55rem; border-radius: 999px;
-        font-size: 0.74rem; font-weight: 600;
+        padding: 0.2rem 0.6rem; border-radius: 999px;
+        font-size: 0.74rem; font-weight: 700;
         border: 1px solid transparent;
     }
-    .mini-chip.up   { background: #f0fdf4; color: #166534; border-color: #d1fae5; }
-    .mini-chip.down { background: #fef2f2; color: #991b1b; border-color: #fee2e2; }
-    .mini-chip.flat { background: #f4f4f5; color: #52525b; border-color: #e4e4e7; }
+    .mini-chip.up   { background: rgba(190,242,100,0.12); color: #d9f99d; border-color: rgba(190,242,100,0.35); }
+    .mini-chip.down { background: rgba(251,113,133,0.12); color: #fda4af; border-color: rgba(251,113,133,0.35); }
+    .mini-chip.flat { background: rgba(148,168,212,0.12); color: #cbd5e1; border-color: rgba(148,168,212,0.3); }
 
     /* News overall sentiment */
     .sent-overall {
         display: flex; justify-content: space-between; align-items: center;
-        background: #ffffff;
-        border: 1px solid rgba(15,23,42,0.06);
+        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(190,242,100,0.12);
         border-radius: 12px;
-        padding: 0.7rem 1rem;
+        padding: 0.75rem 1rem;
         margin-bottom: 0.7rem;
-        box-shadow: 0 1px 2px rgba(15,23,42,0.03);
     }
     .sent-overall-label {
         font-size: 0.85rem;
         font-weight: 600;
-        color: #475569;
+        color: #c8d3ef;
     }
     .sent-overall-score {
         display: flex; align-items: center; gap: 0.6rem;
@@ -679,106 +720,108 @@ st.markdown(
     .sent-counts {
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.8rem;
-        color: #64748b;
+        color: #94a8d4;
     }
 
-    /* Level tile */
+    /* Level tile — aurora glass */
     .level-tile {
-        background: #ffffff;
-        border: 1px solid rgba(15,23,42,0.06);
+        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(190,242,100,0.12);
         border-radius: 14px;
-        padding: 0.95rem 1.05rem;
+        padding: 1rem 1.1rem;
         height: 100%;
-        box-shadow: 0 1px 2px rgba(15,23,42,0.03);
-        transition: box-shadow 0.18s;
+        transition: all 0.2s;
     }
-    .level-tile:hover { box-shadow: 0 2px 8px rgba(15,23,42,0.06); }
+    .level-tile:hover { transform: translateY(-2px); border-color: rgba(190,242,100,0.3); }
     .level-tile .role {
-        font-size: 0.68rem; font-weight: 600;
-        letter-spacing: 0.1em; text-transform: uppercase;
-        color: #64748b;
+        font-size: 0.68rem; font-weight: 700;
+        letter-spacing: 0.12em; text-transform: uppercase;
+        color: #94a8d4;
     }
     .level-tile .price {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 1.25rem; font-weight: 700;
-        margin-top: 0.35rem; letter-spacing: -0.015em;
+        font-size: 1.3rem; font-weight: 800;
+        margin-top: 0.4rem; letter-spacing: -0.02em;
         font-variant-numeric: tabular-nums;
     }
     .level-tile .delta {
-        font-size: 0.76rem; margin-top: 0.25rem; color: #64748b;
+        font-size: 0.76rem; margin-top: 0.25rem; color: #94a8d4;
     }
-    .level-tile.entry     { border-color: #a7f3d0; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); }
-    .level-tile.entry .price     { color: #047857; }
-    .level-tile.stop      { border-color: #fecaca; background: linear-gradient(180deg, #ffffff 0%, #fef2f2 100%); }
-    .level-tile.stop .price      { color: #b91c1c; }
-    .level-tile.target    { border-color: #dbeafe; background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%); }
-    .level-tile.target .price    { color: #4338ca; }
-    .level-tile.resistance { border-color: #fecaca; background: linear-gradient(180deg, #ffffff 0%, #fef2f2 100%); }
-    .level-tile.resistance .price { color: #b91c1c; }
-    .level-tile.current   { background: #fafafa; }
-    .level-tile.current .price   { color: #0f172a; }
+    .level-tile.entry     { border-color: rgba(190,242,100,0.35); box-shadow: 0 0 20px rgba(190,242,100,0.06); }
+    .level-tile.entry .price     { color: #d9f99d; text-shadow: 0 0 12px rgba(190,242,100,0.4); }
+    .level-tile.stop      { border-color: rgba(251,146,60,0.35); box-shadow: 0 0 20px rgba(251,146,60,0.06); }
+    .level-tile.stop .price      { color: #fdba74; text-shadow: 0 0 12px rgba(251,146,60,0.4); }
+    .level-tile.target    { border-color: rgba(59,130,246,0.35); box-shadow: 0 0 20px rgba(59,130,246,0.06); }
+    .level-tile.target .price    { color: #93c5fd; text-shadow: 0 0 12px rgba(59,130,246,0.4); }
+    .level-tile.resistance { border-color: rgba(251,113,133,0.35); box-shadow: 0 0 20px rgba(251,113,133,0.06); }
+    .level-tile.resistance .price { color: #fda4af; text-shadow: 0 0 12px rgba(251,113,133,0.4); }
+    .level-tile.current   {
+        background: linear-gradient(180deg, rgba(59,130,246,0.1) 0%, rgba(14,19,57,0.7) 100%);
+        border-color: rgba(59,130,246,0.35);
+    }
+    .level-tile.current .price   { color: #f0f7ff; text-shadow: 0 0 16px rgba(190,242,100,0.4); }
 
     .rr-badge {
         display: inline-block;
-        background: #ffffff;
-        border: 1px solid rgba(15,23,42,0.08);
+        background: linear-gradient(135deg, rgba(190,242,100,0.12) 0%, rgba(59,130,246,0.08) 100%);
+        border: 1px solid rgba(190,242,100,0.3);
         border-radius: 999px;
-        padding: 0.3rem 0.85rem;
+        padding: 0.35rem 0.95rem;
         font-size: 0.85rem;
-        color: #475569;
-        font-weight: 500;
-        box-shadow: 0 1px 2px rgba(15,23,42,0.03);
+        color: #c8d3ef;
+        font-weight: 600;
     }
-    .rr-badge b { color: #0f172a; font-weight: 700; }
+    .rr-badge b { color: #bef264; font-weight: 800; }
 
     .pick-intro {
-        color: #475569; font-size: 0.9rem; margin-bottom: 0.8rem;
+        color: #c8d3ef; font-size: 0.9rem; margin-bottom: 0.8rem;
     }
     .pick-disclaim {
-        background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
-        border: 1px solid #fde68a;
+        background: linear-gradient(180deg, rgba(251,191,36,0.08) 0%, rgba(14,19,57,0.7) 100%);
+        border: 1px solid rgba(251,191,36,0.3);
         border-radius: 12px; padding: 0.75rem 0.95rem;
-        color: #92400e; font-size: 0.85rem; margin-bottom: 1rem;
+        color: #fde68a; font-size: 0.85rem; margin-bottom: 1rem;
     }
 
     /* Price ladder (above chart) */
     .lv-ladder {
-        background: #ffffff;
-        border: 1px solid rgba(15,23,42,0.06);
+        background: linear-gradient(180deg, rgba(19,24,56,0.7) 0%, rgba(14,19,57,0.7) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(190,242,100,0.12);
         border-radius: 14px;
-        padding: 0.85rem 1rem;
+        padding: 0.9rem 1.1rem;
         margin-bottom: 0.7rem;
-        box-shadow: 0 1px 2px rgba(15,23,42,0.03);
     }
     .lv-row {
         display: flex;
         align-items: center;
         gap: 0.6rem;
         flex-wrap: wrap;
-        padding: 0.35rem 0;
+        padding: 0.4rem 0;
     }
     .lv-arrow {
         font-size: 0.78rem;
-        font-weight: 600;
-        color: #64748b;
+        font-weight: 700;
+        color: #94a8d4;
         min-width: 145px;
         flex-shrink: 0;
     }
-    .lv-row-up .lv-arrow { color: #b91c1c; }
-    .lv-row-down .lv-arrow { color: #166534; }
+    .lv-row-up .lv-arrow { color: #fda4af; }
+    .lv-row-down .lv-arrow { color: #d9f99d; }
     .lv-pills { display: flex; gap: 0.45rem; flex-wrap: wrap; }
-    .lv-empty { font-size: 0.82rem; color: #94a3b8; font-style: italic; }
+    .lv-empty { font-size: 0.82rem; color: #6b7aa8; font-style: italic; }
 
     .lv-pill {
         display: inline-flex; align-items: baseline; gap: 0.5rem;
-        padding: 0.4rem 0.75rem;
+        padding: 0.4rem 0.85rem;
         border-radius: 999px;
         border: 1px solid;
         font-size: 0.85rem;
     }
-    .lv-pill.lv-sell { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-    .lv-pill.lv-buy  { background: #f0fdf4; color: #166534; border-color: #a7f3d0; }
-    .lv-pill.lv-stop { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+    .lv-pill.lv-sell { background: rgba(251,113,133,0.1); color: #fda4af; border-color: rgba(251,113,133,0.35); }
+    .lv-pill.lv-buy  { background: rgba(190,242,100,0.1); color: #d9f99d; border-color: rgba(190,242,100,0.35); }
+    .lv-pill.lv-stop { background: rgba(251,146,60,0.1); color: #fdba74; border-color: rgba(251,146,60,0.35); }
     .lv-pill .lv-role {
         font-weight: 600;
         font-size: 0.8rem;
@@ -798,38 +841,40 @@ st.markdown(
 
     /* Now row */
     .lv-now {
-        display: flex; align-items: center; gap: 0.8rem;
-        padding: 0.7rem 0.85rem;
-        margin: 0.4rem 0;
-        background: linear-gradient(90deg, #f1f5f9 0%, #ffffff 50%, #f1f5f9 100%);
-        border-top: 1px solid rgba(15,23,42,0.06);
-        border-bottom: 1px solid rgba(15,23,42,0.06);
-        border-radius: 8px;
+        display: flex; align-items: center; gap: 0.85rem;
+        padding: 0.85rem 1rem;
+        margin: 0.5rem 0;
+        background: linear-gradient(90deg, rgba(190,242,100,0.06) 0%, rgba(59,130,246,0.08) 50%, rgba(190,242,100,0.06) 100%);
+        border-top: 1px solid rgba(190,242,100,0.2);
+        border-bottom: 1px solid rgba(190,242,100,0.2);
+        border-radius: 10px;
     }
     .lv-now-label {
         font-size: 0.78rem;
-        font-weight: 600;
-        color: #64748b;
-        letter-spacing: 0.06em;
+        font-weight: 700;
+        color: #c8d3ef;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
         min-width: 145px;
     }
     .lv-now-price {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: #0f172a;
-        letter-spacing: -0.01em;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #f0f7ff;
+        letter-spacing: -0.015em;
         font-variant-numeric: tabular-nums;
+        text-shadow: 0 0 16px rgba(190,242,100,0.3);
     }
     .lv-now-tag {
         font-size: 0.7rem;
-        font-weight: 700;
-        color: #16a34a;
-        background: #f0fdf4;
-        padding: 0.2rem 0.5rem;
+        font-weight: 800;
+        color: #d9f99d;
+        background: rgba(190,242,100,0.12);
+        border: 1px solid rgba(190,242,100,0.4);
+        padding: 0.22rem 0.55rem;
         border-radius: 999px;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.06em;
     }
 
     @media (max-width: 768px) {
@@ -841,11 +886,11 @@ st.markdown(
         .lv-now-price { font-size: 1.2rem; }
     }
 
-    /* Section heading — with accent dot */
+    /* Section heading — chartreuse dot */
     .section-h {
         font-size: 0.7rem;
         font-weight: 700;
-        color: #44403c;
+        color: #94a8d4;
         letter-spacing: 0.18em;
         text-transform: uppercase;
         margin: 1rem 0 0.6rem 0;
@@ -857,7 +902,8 @@ st.markdown(
         position: absolute; left: 0; top: 50%;
         width: 6px; height: 6px;
         border-radius: 50%;
-        background: #5b21b6;
+        background: #bef264;
+        box-shadow: 0 0 8px rgba(190,242,100,0.6);
         transform: translateY(-50%);
     }
 
@@ -2248,24 +2294,25 @@ if st.session_state.page == "🌐 ภาพรวมตลาด":
         # Sort by 1-day change descending for at-a-glance
         sectors_sorted = sorted(sectors, key=lambda x: x["d1"], reverse=True)
 
-        def _sec_color(pct: float) -> tuple[str, str]:
-            if pct >= 2:    return "#15803d", "#dcfce7"
-            if pct >= 1:    return "#166534", "#ecfdf5"
-            if pct >= 0.3:  return "#16a34a", "#f0fdf4"
-            if pct > -0.3:  return "#475569", "#f1f5f9"
-            if pct > -1:    return "#b91c1c", "#fef2f2"
-            if pct > -2:    return "#991b1b", "#fee2e2"
-            return "#7f1d1d", "#fecaca"
+        def _sec_color(pct: float) -> tuple[str, str, str]:
+            # (border_color, bg_gradient, text_color)
+            if pct >= 2:    return "rgba(190,242,100,0.5)", "linear-gradient(135deg, rgba(190,242,100,0.18) 0%, rgba(19,24,56,0.7) 100%)", "#d9f99d"
+            if pct >= 1:    return "rgba(190,242,100,0.35)", "linear-gradient(135deg, rgba(190,242,100,0.10) 0%, rgba(19,24,56,0.7) 100%)", "#d9f99d"
+            if pct >= 0.3:  return "rgba(190,242,100,0.22)", "linear-gradient(135deg, rgba(190,242,100,0.05) 0%, rgba(19,24,56,0.7) 100%)", "#bef264"
+            if pct > -0.3:  return "rgba(148,168,212,0.2)", "rgba(19,24,56,0.7)", "#94a8d4"
+            if pct > -1:    return "rgba(251,113,133,0.25)", "linear-gradient(135deg, rgba(251,113,133,0.05) 0%, rgba(19,24,56,0.7) 100%)", "#fda4af"
+            if pct > -2:    return "rgba(251,113,133,0.4)", "linear-gradient(135deg, rgba(251,113,133,0.10) 0%, rgba(19,24,56,0.7) 100%)", "#fda4af"
+            return "rgba(251,113,133,0.55)", "linear-gradient(135deg, rgba(251,113,133,0.18) 0%, rgba(19,24,56,0.7) 100%)", "#fb7185"
 
         st.caption("คลิกชื่อ ETF เพื่อดูรายละเอียดเต็ม · สี = % เปลี่ยนแปลงวันนี้")
         hm_html = '<div class="sector-grid">'
         for s in sectors_sorted:
-            color, bg = _sec_color(s["d1"])
+            border, bg, txt = _sec_color(s["d1"])
             hm_html += (
-                f'<div class="sector-cell" style="background:{bg};border-color:{color};">'
+                f'<div class="sector-cell" style="background:{bg};border-color:{border};">'
                 f'<div class="sector-sym">{s["sym"]}</div>'
                 f'<div class="sector-name">{s["name"]}</div>'
-                f'<div class="sector-pct" style="color:{color};">{s["d1"]:+.2f}%</div>'
+                f'<div class="sector-pct" style="color:{txt};">{s["d1"]:+.2f}%</div>'
                 f'<div class="sector-sub">5D {s["d5"]:+.1f}% · 1M {s["d20"]:+.1f}%</div>'
                 f'</div>'
             )
@@ -2746,10 +2793,10 @@ with tab_chart:
           "symbol": "{tv_symbol}",
           "interval": "{tv_interval}",
           "timezone": "Asia/Bangkok",
-          "theme": "light",
+          "theme": "dark",
           "style": "1",
           "locale": "th_TH",
-          "toolbar_bg": "#ffffff",
+          "toolbar_bg": "#131838",
           "enable_publishing": false,
           "withdateranges": true,
           "hide_side_toolbar": false,
@@ -2893,27 +2940,29 @@ with tab_stats:
                         name="รายได้", x=date_labels, y=rev_vals,
                         marker_color="#3b82f6",
                         text=[f"${v:.1f}B" for v in rev_vals], textposition="outside",
+                        textfont=dict(color="#c8d3ef"),
                     ))
                 if "Net Income" in qf.index:
                     ni_vals = [float(qf.at["Net Income", c]) / 1e9 for c in cols_q]
                     fig_q.add_trace(go.Bar(
                         name="กำไรสุทธิ", x=date_labels, y=ni_vals,
-                        marker_color="#10b981",
+                        marker_color="#bef264",
                         text=[f"${v:.1f}B" for v in ni_vals], textposition="outside",
+                        textfont=dict(color="#c8d3ef"),
                     ))
 
                 fig_q.update_layout(
                     barmode="group", height=320,
-                    template="plotly_white",
-                    paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                     margin=dict(l=20, r=20, t=20, b=20),
                     yaxis_title="พันล้านดอลลาร์ (USD)",
-                    font=dict(family="Inter, sans-serif", color="#475569", size=11),
+                    font=dict(family="Inter, sans-serif", color="#94a8d4", size=11),
                     legend=dict(orientation="h", yanchor="bottom", y=1.02,
                                 xanchor="right", x=1, bgcolor="rgba(0,0,0,0)"),
                 )
-                fig_q.update_xaxes(gridcolor="#f1f5f9")
-                fig_q.update_yaxes(gridcolor="#f1f5f9", zerolinecolor="#cbd5e1")
+                fig_q.update_xaxes(gridcolor="rgba(190,242,100,0.06)", color="#94a8d4")
+                fig_q.update_yaxes(gridcolor="rgba(190,242,100,0.06)", color="#94a8d4", zerolinecolor="rgba(190,242,100,0.1)")
                 st.plotly_chart(fig_q, use_container_width=True,
                                 config={"displaylogo": False})
 
