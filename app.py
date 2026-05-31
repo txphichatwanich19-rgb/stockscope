@@ -128,50 +128,68 @@ st.markdown(
         max-width: 1380px;
     }
 
-    /* Sidebar — deep night with subtle glow */
+    /* Sidebar — solid dark, no gradients washing out text */
     [data-testid="stSidebar"] {
-        background:
-            radial-gradient(300px 200px at 0% 70%, rgba(190,242,100,0.08), transparent 60%),
-            radial-gradient(400px 300px at 100% 20%, rgba(59,130,246,0.1), transparent 60%),
-            linear-gradient(180deg, #0e1339 0%, #060924 100%);
-        border-right: 1px solid rgba(190,242,100,0.15);
+        background: #0a0d24 !important;
+        border-right: 1px solid #2b3060;
     }
-    /* Make ALL sidebar text readable */
+    /* FORCE pure white text everywhere in sidebar */
+    [data-testid="stSidebar"],
     [data-testid="stSidebar"] *,
     [data-testid="stSidebar"] label,
     [data-testid="stSidebar"] p,
     [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] .stMarkdown {
-        color: #e8edff !important;
+    [data-testid="stSidebar"] div,
+    [data-testid="stSidebar"] .stMarkdown,
+    [data-testid="stSidebar"] .stMarkdown p,
+    [data-testid="stSidebar"] [data-baseweb="radio"] *,
+    [data-testid="stSidebar"] [role="radiogroup"] *,
+    [data-testid="stSidebar"] [data-testid="stCheckbox"] *,
+    [data-testid="stSidebar"] [data-baseweb="select"] * {
+        color: #ffffff !important;
     }
     [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
-    [data-testid="stSidebar"] small {
-        color: #94a8d4 !important;
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] * {
+        color: #b8c4e8 !important;
     }
-    /* Radio option labels (page nav) */
-    [data-testid="stSidebar"] [data-baseweb="radio"] label,
-    [data-testid="stSidebar"] [role="radiogroup"] label {
-        color: #e8edff !important;
-        font-weight: 500 !important;
-    }
-    /* Text input on dark bg */
     [data-testid="stSidebar"] input,
-    [data-testid="stSidebar"] textarea,
-    [data-testid="stSidebar"] [data-baseweb="select"] > div {
+    [data-testid="stSidebar"] textarea {
         background: #1a1f3d !important;
-        color: #f0f7ff !important;
-        border-color: #2b3060 !important;
+        color: #ffffff !important;
+        border: 1px solid #3b3f6b !important;
     }
     [data-testid="stSidebar"] input::placeholder {
-        color: #6b7aa8 !important;
+        color: #8a9bc4 !important;
     }
-    /* Selectbox text */
-    [data-testid="stSidebar"] [data-baseweb="select"] * {
-        color: #f0f7ff !important;
+    [data-testid="stSidebar"] [data-baseweb="select"] > div {
+        background: #1a1f3d !important;
+        border: 1px solid #3b3f6b !important;
     }
-    /* Checkbox labels */
-    [data-testid="stSidebar"] [data-testid="stCheckbox"] label {
-        color: #e8edff !important;
+    /* Section heading override in sidebar — bright */
+    [data-testid="stSidebar"] .section-h {
+        color: #bef264 !important;
+        font-weight: 700 !important;
+    }
+    /* Brand text override */
+    [data-testid="stSidebar"] .brand .name {
+        color: #ffffff !important;
+        background: none !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+    [data-testid="stSidebar"] .brand .sub {
+        color: #bef264 !important;
+    }
+    /* Sidebar buttons more contrasty */
+    [data-testid="stSidebar"] .stButton > button {
+        background: #1e2447 !important;
+        border: 1px solid #4a5080 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+    }
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background: #2a3160 !important;
+        border-color: #bef264 !important;
+        color: #bef264 !important;
     }
 
     @keyframes fadeInUp {
