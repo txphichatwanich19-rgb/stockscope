@@ -75,24 +75,43 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Rounded');
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined|Material+Symbols+Rounded&display=swap');
 
     html, body, [class*="css"], .stApp, .stMarkdown, button, input, textarea, select,
     p, span, div, h1, h2, h3, h4, h5, h6, label {
-        font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif !important;
+        font-family: 'Anuphan', 'Plus Jakarta Sans', system-ui, sans-serif !important;
     }
-    /* Protect Material Symbols icons — used by Streamlit for expander chevrons, etc. */
+    /* Protect Material Icons / Material Symbols — used by Streamlit chevrons, etc */
     [class*="material-symbols"],
     [class*="MaterialSymbols"],
     .material-icons,
     .material-icons-outlined,
     .material-icons-rounded,
+    [class*="material-icons"],
+    span[data-testid*="Icon"],
     span[data-testid*="icon"],
-    [aria-hidden="true"][class*="symbol"],
+    [data-testid="stIconMaterial"],
+    [data-testid*="ExpanderIcon"],
+    [data-testid*="Chevron"],
+    summary > div > span:first-child,
     i.material-icons,
     i[class*="material"] {
         font-family: 'Material Symbols Rounded', 'Material Symbols Outlined',
-                     'Material Icons', 'Material Icons Outlined' !important;
+                     'Material Icons Rounded', 'Material Icons Outlined',
+                     'Material Icons' !important;
+        font-weight: normal !important;
+        font-style: normal !important;
+        letter-spacing: normal !important;
+        text-transform: none !important;
+        display: inline-block;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        -webkit-font-feature-settings: 'liga';
+        -webkit-font-smoothing: antialiased;
+        font-feature-settings: 'liga';
     }
 
     .stApp {
@@ -252,7 +271,7 @@ st.markdown(
         position: relative; z-index: 1;
     }
     .hero .name {
-        font-family: 'Sora', 'IBM Plex Sans Thai', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', 'Anuphan', sans-serif !important;
         font-size: 2.3rem;
         font-weight: 700;
         color: #f0f7ff;
@@ -458,7 +477,7 @@ st.markdown(
         transform: translateY(-2px);
     }
     .news-card .title {
-        font-family: 'Sora', 'IBM Plex Sans Thai', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', 'Anuphan', sans-serif !important;
         color: #f0f7ff;
         font-weight: 600;
         font-size: 1.05rem;
@@ -475,7 +494,7 @@ st.markdown(
     .verdict {
         border-radius: 18px;
         padding: 1.8rem 2rem;
-        font-family: 'Sora', 'IBM Plex Sans Thai', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', 'Anuphan', sans-serif !important;
         font-size: 1.5rem;
         font-weight: 700;
         text-align: center;
@@ -529,7 +548,7 @@ st.markdown(
         background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #bef264 100%);
         color: #0a0f2e;
         display: flex; align-items: center; justify-content: center;
-        font-family: 'Sora', sans-serif;
+        font-family: 'Plus Jakarta Sans', sans-serif;
         font-size: 1.5rem;
         font-weight: 800;
         box-shadow:
@@ -538,7 +557,7 @@ st.markdown(
             inset 0 1px 0 rgba(255,255,255,0.25);
     }
     .brand .name {
-        font-family: 'Sora', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         font-weight: 700;
         font-size: 1.25rem;
         color: #f0f7ff !important;
