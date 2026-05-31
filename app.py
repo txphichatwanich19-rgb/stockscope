@@ -1190,6 +1190,12 @@ def to_tv_interval(yf_interval: str) -> str:
     }.get(yf_interval, "D")
 
 
+def _levels_key(df: pd.DataFrame) -> tuple:
+    if df is None or df.empty:
+        return ("", 0, 0.0)
+    return (str(df.index[-1]), len(df), float(df["Close"].iloc[-1]))
+
+
 def compute_levels(df: pd.DataFrame, max_each: int = 3) -> dict:
     """Find support/resistance from local pivot highs/lows, cluster within 1.5%."""
     if len(df) < 20:
@@ -2685,6 +2691,20 @@ if not ticker:
     st.stop()
 
 with st.spinner(f"กำลังโหลด {ticker}…"):
+    # Parallel pre-warm: fetch all ticker data concurrently
+    # subsequent cached reads complete in microseconds
+    def _warm():
+        with ThreadPoolExecutor(max_workers=6) as ex:
+            ex.submit(load_history, ticker, period, interval)
+            ex.submit(load_info, ticker)
+            ex.submit(load_news, ticker)
+            ex.submit(load_quarterly_financials, ticker)
+            ex.submit(load_insider_trades, ticker)
+            ex.submit(load_earnings_history, ticker)
+    try:
+        _warm()
+    except Exception:
+        pass
     df = load_history(ticker, period, interval)
     info = load_info(ticker)
     news = load_news(ticker)
