@@ -75,11 +75,11 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap');
 
-    html, body, [class*="css"], .stApp, .stMarkdown, button, input, textarea, select {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-        font-feature-settings: "ss01", "cv01", "cv11";
+    html, body, [class*="css"], .stApp, .stMarkdown, button, input, textarea, select,
+    p, span, div, h1, h2, h3, h4, h5, h6, label {
+        font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif !important;
     }
 
     .stApp {
@@ -128,13 +128,50 @@ st.markdown(
         max-width: 1380px;
     }
 
-    /* Sidebar — deep night with green/blue glow */
+    /* Sidebar — deep night with subtle glow */
     [data-testid="stSidebar"] {
         background:
-            radial-gradient(300px 200px at 0% 70%, rgba(190,242,100,0.12), transparent 60%),
-            radial-gradient(400px 300px at 100% 20%, rgba(59,130,246,0.15), transparent 60%),
+            radial-gradient(300px 200px at 0% 70%, rgba(190,242,100,0.08), transparent 60%),
+            radial-gradient(400px 300px at 100% 20%, rgba(59,130,246,0.1), transparent 60%),
             linear-gradient(180deg, #0e1339 0%, #060924 100%);
         border-right: 1px solid rgba(190,242,100,0.15);
+    }
+    /* Make ALL sidebar text readable */
+    [data-testid="stSidebar"] *,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] .stMarkdown {
+        color: #e8edff !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+    [data-testid="stSidebar"] small {
+        color: #94a8d4 !important;
+    }
+    /* Radio option labels (page nav) */
+    [data-testid="stSidebar"] [data-baseweb="radio"] label,
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        color: #e8edff !important;
+        font-weight: 500 !important;
+    }
+    /* Text input on dark bg */
+    [data-testid="stSidebar"] input,
+    [data-testid="stSidebar"] textarea,
+    [data-testid="stSidebar"] [data-baseweb="select"] > div {
+        background: #1a1f3d !important;
+        color: #f0f7ff !important;
+        border-color: #2b3060 !important;
+    }
+    [data-testid="stSidebar"] input::placeholder {
+        color: #6b7aa8 !important;
+    }
+    /* Selectbox text */
+    [data-testid="stSidebar"] [data-baseweb="select"] * {
+        color: #f0f7ff !important;
+    }
+    /* Checkbox labels */
+    [data-testid="stSidebar"] [data-testid="stCheckbox"] label {
+        color: #e8edff !important;
     }
 
     @keyframes fadeInUp {
@@ -209,13 +246,13 @@ st.markdown(
         position: relative; z-index: 1;
     }
     .hero .name {
-        font-family: 'Instrument Serif', serif !important;
-        font-size: 2.6rem;
-        font-weight: 400;
+        font-family: 'Sora', 'IBM Plex Sans Thai', sans-serif !important;
+        font-size: 2.3rem;
+        font-weight: 700;
         color: #f0f7ff;
         margin: 0.6rem 0 0.3rem 0;
-        letter-spacing: -0.025em;
-        line-height: 1.05;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
         position: relative; z-index: 1;
     }
     .hero .meta {
@@ -415,11 +452,11 @@ st.markdown(
         transform: translateY(-2px);
     }
     .news-card .title {
-        font-family: 'Instrument Serif', serif !important;
+        font-family: 'Sora', 'IBM Plex Sans Thai', sans-serif !important;
         color: #f0f7ff;
-        font-weight: 400;
-        font-size: 1.2rem;
-        line-height: 1.35;
+        font-weight: 600;
+        font-size: 1.05rem;
+        line-height: 1.4;
         letter-spacing: -0.015em;
     }
     .news-card .title a { color: #f0f7ff; text-decoration: none; }
@@ -432,9 +469,9 @@ st.markdown(
     .verdict {
         border-radius: 18px;
         padding: 1.8rem 2rem;
-        font-family: 'Instrument Serif', serif !important;
-        font-size: 1.8rem;
-        font-weight: 400;
+        font-family: 'Sora', 'IBM Plex Sans Thai', sans-serif !important;
+        font-size: 1.5rem;
+        font-weight: 700;
         text-align: center;
         letter-spacing: -0.02em;
         margin-bottom: 1rem;
@@ -486,29 +523,25 @@ st.markdown(
         background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #bef264 100%);
         color: #0a0f2e;
         display: flex; align-items: center; justify-content: center;
-        font-family: 'Instrument Serif', serif;
-        font-size: 1.7rem;
-        font-weight: 400;
-        font-style: italic;
+        font-family: 'Sora', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 800;
         box-shadow:
             0 0 20px rgba(190,242,100,0.3),
             0 4px 12px -2px rgba(59,130,246,0.4),
             inset 0 1px 0 rgba(255,255,255,0.25);
     }
     .brand .name {
-        font-family: 'Instrument Serif', serif !important;
-        font-weight: 400;
-        font-size: 1.4rem;
-        background: linear-gradient(90deg, #f0f7ff 0%, #bef264 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        letter-spacing: -0.01em;
+        font-family: 'Sora', sans-serif !important;
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: #f0f7ff !important;
+        letter-spacing: -0.02em;
         line-height: 1;
     }
     .brand .sub  {
-        font-size: 0.65rem;
-        color: #bef264;
+        font-size: 0.62rem;
+        color: #bef264 !important;
         letter-spacing: 0.2em;
         text-transform: uppercase;
         font-weight: 700;
@@ -905,14 +938,14 @@ st.markdown(
 
     /* Section heading — chartreuse dot */
     .section-h {
-        font-size: 0.7rem;
+        font-size: 0.72rem;
         font-weight: 700;
-        color: #94a8d4;
-        letter-spacing: 0.18em;
+        color: #c8d3ef !important;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
         margin: 1rem 0 0.6rem 0;
         position: relative;
-        padding-left: 0.85rem;
+        padding-left: 0.95rem;
     }
     .section-h::before {
         content: '';
@@ -923,6 +956,7 @@ st.markdown(
         box-shadow: 0 0 8px rgba(190,242,100,0.6);
         transform: translateY(-50%);
     }
+    [data-testid="stSidebar"] .section-h { color: #d9deff !important; }
 
     /* Hide default streamlit footer */
     footer { visibility: hidden; }
