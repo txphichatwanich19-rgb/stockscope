@@ -84,11 +84,42 @@ st.markdown(
 
     .stApp {
         background:
-            radial-gradient(1200px 600px at 75% -5%, rgba(190,242,100,0.10), transparent 55%),
-            radial-gradient(900px 500px at 10% 20%, rgba(59,130,246,0.22), transparent 55%),
-            radial-gradient(1100px 550px at 90% 100%, rgba(37,99,235,0.18), transparent 60%),
-            radial-gradient(700px 400px at 30% 90%, rgba(132,204,22,0.06), transparent 60%),
-            linear-gradient(180deg, #0a0f2e 0%, #0a0d24 100%);
+            /* Bright chartreuse streak — mimic aurora highlight in the image */
+            radial-gradient(800px 200px at 30% 35%, rgba(217,249,157,0.35), transparent 55%),
+            radial-gradient(600px 150px at 70% 60%, rgba(190,242,100,0.30), transparent 55%),
+            radial-gradient(900px 250px at 10% 80%, rgba(217,249,157,0.25), transparent 60%),
+            radial-gradient(500px 120px at 85% 25%, rgba(190,242,100,0.22), transparent 60%),
+            /* Electric blue dominant */
+            radial-gradient(1300px 700px at 80% 0%, rgba(37,99,235,0.45), transparent 60%),
+            radial-gradient(1100px 600px at 15% 50%, rgba(59,130,246,0.38), transparent 60%),
+            radial-gradient(1000px 550px at 50% 100%, rgba(30,64,175,0.40), transparent 65%),
+            /* Dark navy base */
+            linear-gradient(180deg, #050818 0%, #080b22 100%);
+    }
+    /* Subtle film grain for that gradient texture */
+    .stApp::before {
+        content: '';
+        position: fixed; inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1, 0 0 0 0 1, 0 0 0 0 1, 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.5;
+    }
+    .stApp > * { position: relative; z-index: 1; }
+
+    /* Aurora streak overlay — moving green/blue waves */
+    .stApp::after {
+        content: '';
+        position: fixed;
+        top: -20%; left: -10%; right: -10%; bottom: -20%;
+        background:
+            radial-gradient(ellipse 60% 30% at 20% 30%, rgba(190,242,100,0.18), transparent 60%),
+            radial-gradient(ellipse 50% 25% at 75% 55%, rgba(217,249,157,0.15), transparent 60%),
+            radial-gradient(ellipse 40% 20% at 50% 85%, rgba(132,204,22,0.12), transparent 60%);
+        pointer-events: none;
+        z-index: 0;
+        filter: blur(40px);
+        opacity: 0.9;
     }
 
     header[data-testid="stHeader"] { background: transparent; }
@@ -97,12 +128,13 @@ st.markdown(
         max-width: 1380px;
     }
 
-    /* Sidebar — deep night blue */
+    /* Sidebar — deep night with green/blue glow */
     [data-testid="stSidebar"] {
         background:
-            radial-gradient(400px 300px at 0% 20%, rgba(59,130,246,0.12), transparent 60%),
-            linear-gradient(180deg, #0e1339 0%, #0a0f2e 100%);
-        border-right: 1px solid rgba(190,242,100,0.1);
+            radial-gradient(300px 200px at 0% 70%, rgba(190,242,100,0.12), transparent 60%),
+            radial-gradient(400px 300px at 100% 20%, rgba(59,130,246,0.15), transparent 60%),
+            linear-gradient(180deg, #0e1339 0%, #060924 100%);
+        border-right: 1px solid rgba(190,242,100,0.15);
     }
 
     @keyframes fadeInUp {
