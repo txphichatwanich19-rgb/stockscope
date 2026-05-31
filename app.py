@@ -81,6 +81,19 @@ st.markdown(
     p, span, div, h1, h2, h3, h4, h5, h6, label {
         font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif !important;
     }
+    /* Protect Material Symbols icons — used by Streamlit for expander chevrons, etc. */
+    [class*="material-symbols"],
+    [class*="MaterialSymbols"],
+    .material-icons,
+    .material-icons-outlined,
+    .material-icons-rounded,
+    span[data-testid*="icon"],
+    [aria-hidden="true"][class*="symbol"],
+    i.material-icons,
+    i[class*="material"] {
+        font-family: 'Material Symbols Rounded', 'Material Symbols Outlined',
+                     'Material Icons', 'Material Icons Outlined' !important;
+    }
 
     .stApp {
         background:
