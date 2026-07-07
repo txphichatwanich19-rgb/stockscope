@@ -824,6 +824,17 @@ st.markdown(
     .level-tile .delta {
         font-size: 0.76rem; margin-top: 0.25rem; color: #94a8d4;
     }
+    .zone-status {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.28rem 0.55rem;
+        border-radius: 6px;
+        margin-top: 0.55rem;
+        border: 1px solid;
+        background: rgba(0,0,0,0.15);
+        letter-spacing: 0.01em;
+    }
     .level-tile.entry     { border-color: rgba(190,242,100,0.35); box-shadow: 0 0 20px rgba(190,242,100,0.06); }
     .level-tile.entry .price     { color: #d9f99d; text-shadow: 0 0 12px rgba(190,242,100,0.4); }
     .level-tile.stop      { border-color: rgba(251,146,60,0.35); box-shadow: 0 0 20px rgba(251,146,60,0.06); }
@@ -897,6 +908,16 @@ st.markdown(
     .lv-pill.lv-sell { background: rgba(251,113,133,0.1); color: #fda4af; border-color: rgba(251,113,133,0.35); }
     .lv-pill.lv-buy  { background: rgba(190,242,100,0.1); color: #d9f99d; border-color: rgba(190,242,100,0.35); }
     .lv-pill.lv-stop { background: rgba(251,146,60,0.1); color: #fdba74; border-color: rgba(251,146,60,0.35); }
+    .lv-pill .lv-status {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 0.1rem 0.4rem;
+        border: 1px solid;
+        border-radius: 4px;
+        margin-left: 0.2rem;
+        background: rgba(0,0,0,0.2);
+    }
     .lv-pill .lv-role {
         font-weight: 600;
         font-size: 0.8rem;
@@ -1229,6 +1250,64 @@ def compute_levels(df: pd.DataFrame, max_each: int = 3) -> dict:
     resistance = sorted([x for x in res_clust if x > current * 1.002])[:max_each]
     support = sorted([x for x in sup_clust if x < current * 0.998], reverse=True)[:max_each]
     return {"support": support, "resistance": resistance, "current": current}
+
+
+def zone_status(df: pd.DataFrame, zone_price: float, kind: str, lookback: int = 30, tol: float = 0.008) -> dict:
+    """Returns status of a zone based on recent price action.
+    kind: 'support' or 'resistance'
+    Status: 'touched' / 'broken' / 'approaching' / 'waiting'
+    Returns dict with: key, label, days_ago (or None), color
+    """
+    if df.empty or len(df) < 2:
+        return {"key": "unknown", "label": "—", "days_ago": None, "color": "#94a8d4"}
+
+    current = float(df["Close"].iloc[-1])
+    recent = df.tail(lookback) if len(df) > lookback else df
+
+    if kind == "support":
+        # Check if any Low touched or broke below zone
+        broken_idx, touched_idx = None, None
+        for i in range(len(recent) - 1, -1, -1):
+            low = float(recent["Low"].iloc[i])
+            close = float(recent["Close"].iloc[i])
+            if low <= zone_price * (1 - tol):
+                # went below (broken?)
+                if close < zone_price * (1 - tol) and broken_idx is None:
+                    broken_idx = i
+            if low <= zone_price * (1 + tol):
+                if touched_idx is None:
+                    touched_idx = i
+        if broken_idx is not None:
+            days = len(recent) - 1 - broken_idx
+            return {"key": "broken", "label": f"⚠️ ทะลุลงแล้ว · {days} วันก่อน" if days > 0 else "⚠️ ทะลุลง (วันนี้)", "days_ago": days, "color": "#fda4af"}
+        if touched_idx is not None:
+            days = len(recent) - 1 - touched_idx
+            return {"key": "touched", "label": f"✓ แตะโซนแล้ว · {days} วันก่อน" if days > 0 else "✓ แตะโซน (วันนี้)", "days_ago": days, "color": "#bef264"}
+        # not yet touched
+        if current < zone_price * 1.03:
+            return {"key": "approaching", "label": "⏳ ใกล้จะเข้าโซน", "days_ago": None, "color": "#facc15"}
+        return {"key": "waiting", "label": "⏸ รอราคาลงมา", "days_ago": None, "color": "#94a8d4"}
+
+    else:  # resistance
+        broken_idx, touched_idx = None, None
+        for i in range(len(recent) - 1, -1, -1):
+            high = float(recent["High"].iloc[i])
+            close = float(recent["Close"].iloc[i])
+            if high >= zone_price * (1 + tol):
+                if close > zone_price * (1 + tol) and broken_idx is None:
+                    broken_idx = i
+            if high >= zone_price * (1 - tol):
+                if touched_idx is None:
+                    touched_idx = i
+        if broken_idx is not None:
+            days = len(recent) - 1 - broken_idx
+            return {"key": "broken", "label": f"⚠️ ทะลุขึ้นแล้ว · {days} วันก่อน" if days > 0 else "⚠️ ทะลุขึ้น (วันนี้)", "days_ago": days, "color": "#bef264"}
+        if touched_idx is not None:
+            days = len(recent) - 1 - touched_idx
+            return {"key": "touched", "label": f"✓ แตะโซนแล้ว · {days} วันก่อน" if days > 0 else "✓ แตะโซน (วันนี้)", "days_ago": days, "color": "#fda4af"}
+        if current > zone_price * 0.97:
+            return {"key": "approaching", "label": "⏳ ใกล้จะเข้าโซน", "days_ago": None, "color": "#facc15"}
+        return {"key": "waiting", "label": "⏸ รอราคาขึ้น", "days_ago": None, "color": "#94a8d4"}
 
 
 # ---------- Data fetch (cached) ----------
@@ -2828,7 +2907,25 @@ with tab_chart:
     elif len(_sup) == 1:
         _stop_lv = _sup[0] * 0.96
 
-    def _lv_pill(role: str, price: float | None, kind: str) -> str:
+    def _status_tag(st_dict: dict | None) -> str:
+        if not st_dict or not st_dict.get("label"):
+            return ""
+        # Compact status tag
+        key = st_dict["key"]
+        icon_map = {"touched": "✓", "broken": "⚠️", "approaching": "⏳", "waiting": "⏸"}
+        short_map = {
+            "touched": "แตะแล้ว",
+            "broken": "ทะลุแล้ว",
+            "approaching": "ใกล้เข้าโซน",
+            "waiting": "รอ",
+        }
+        icon = icon_map.get(key, "")
+        short = short_map.get(key, "")
+        if st_dict.get("days_ago") is not None and st_dict["days_ago"] > 0:
+            short += f" {st_dict['days_ago']}d"
+        return f'<span class="lv-status" style="color:{st_dict["color"]};border-color:{st_dict["color"]}66;">{icon} {short}</span>'
+
+    def _lv_pill(role: str, price: float | None, kind: str, status: dict | None = None) -> str:
         if price is None:
             return ""
         delta = (price / _cur - 1) * 100
@@ -2838,19 +2935,24 @@ with tab_chart:
             f'<span class="lv-role">{role}</span>'
             f'<span class="lv-price">{price:,.2f}</span>'
             f'<span class="lv-delta">{delta_str}</span>'
+            f'{_status_tag(status)}'
             f'</div>'
         )
 
     # Sell zones row (above current price)
     sell_pills = ""
     for i, r in enumerate(_res, 1):
-        sell_pills += _lv_pill(f"🔴 ขาย {i}", r, "sell")
+        st_r = zone_status(df, r, "resistance")
+        sell_pills += _lv_pill(f"🔴 ขาย {i}", r, "sell", st_r)
 
     # Buy zones + SL row (below current price)
     buy_pills = ""
     for i, s in enumerate(_sup, 1):
-        buy_pills += _lv_pill(f"🟢 ซื้อ {i}", s, "buy")
-    buy_pills += _lv_pill("🛑 ตัดขาดทุน", _stop_lv, "stop")
+        st_s = zone_status(df, s, "support")
+        buy_pills += _lv_pill(f"🟢 ซื้อ {i}", s, "buy", st_s)
+    if _stop_lv:
+        st_stop = zone_status(df, _stop_lv, "support")
+        buy_pills += _lv_pill("🛑 ตัดขาดทุน", _stop_lv, "stop", st_stop)
 
     st.markdown(
         f"""
@@ -3392,7 +3494,7 @@ with tab_signal:
     sell3 = resistance[2] if len(resistance) >= 3 else None
     stop_loss = buy2 * 0.98 if buy2 else (buy1 * 0.96 if buy1 else None)
 
-    def level_tile(cls: str, role: str, price: float | None, sub: str = "") -> str:
+    def level_tile(cls: str, role: str, price: float | None, sub: str = "", status: dict | None = None) -> str:
         if price is None:
             return (
                 f'<div class="level-tile {cls}"><div class="role">{role}</div>'
@@ -3400,24 +3502,40 @@ with tab_signal:
             )
         delta_pct = (price / current - 1) * 100
         delta_str = f"{delta_pct:+.2f}% · {sub}" if sub else f"{delta_pct:+.2f}% จากราคาปัจจุบัน"
+        status_html = ""
+        if status and status.get("label"):
+            status_html = (
+                f'<div class="zone-status" style="color:{status["color"]};'
+                f'border-color:{status["color"]}55;">{status["label"]}</div>'
+            )
         return (
             f'<div class="level-tile {cls}"><div class="role">{role}</div>'
-            f'<div class="price">{price:,.2f}</div><div class="delta">{delta_str}</div></div>'
+            f'<div class="price">{price:,.2f}</div>'
+            f'<div class="delta">{delta_str}</div>'
+            f'{status_html}</div>'
         )
+
+    # Compute status for each zone
+    buy1_st = zone_status(df, buy1, "support") if buy1 else None
+    buy2_st = zone_status(df, buy2, "support") if buy2 else None
+    stop_st = zone_status(df, stop_loss, "support") if stop_loss else None
+    sell1_st = zone_status(df, sell1, "resistance") if sell1 else None
+    sell2_st = zone_status(df, sell2, "resistance") if sell2 else None
+    sell3_st = zone_status(df, sell3, "resistance") if sell3 else None
 
     st.markdown('<div class="section-h">🟢 แนวรับ — โซนซื้อ</div>', unsafe_allow_html=True)
     r1 = st.columns(4)
     r1[0].markdown(level_tile("current", "ราคาปัจจุบัน", current, "ตอนนี้"), unsafe_allow_html=True)
-    r1[1].markdown(level_tile("entry", "🟢 โซนซื้อ 1", buy1, "แนวรับ S1 · ใกล้สุด"), unsafe_allow_html=True)
-    r1[2].markdown(level_tile("entry", "🟢 โซนซื้อ 2", buy2, "แนวรับ S2 · ถัดลงไป"), unsafe_allow_html=True)
-    r1[3].markdown(level_tile("stop", "🛑 ตัดขาดทุน", stop_loss, "~2% ใต้ S2" if buy2 else "~4% ใต้ S1"), unsafe_allow_html=True)
+    r1[1].markdown(level_tile("entry", "🟢 โซนซื้อ 1", buy1, "แนวรับ S1", buy1_st), unsafe_allow_html=True)
+    r1[2].markdown(level_tile("entry", "🟢 โซนซื้อ 2", buy2, "แนวรับ S2", buy2_st), unsafe_allow_html=True)
+    r1[3].markdown(level_tile("stop", "🛑 ตัดขาดทุน", stop_loss, "~2% ใต้ S2" if buy2 else "~4% ใต้ S1", stop_st), unsafe_allow_html=True)
 
     st.write("")
     st.markdown('<div class="section-h">🔴 แนวต้าน — โซนขายทำกำไร</div>', unsafe_allow_html=True)
     r2 = st.columns(3)
-    r2[0].markdown(level_tile("resistance", "🎯 โซนขาย 1", sell1, "แนวต้าน R1 · ใกล้สุด"), unsafe_allow_html=True)
-    r2[1].markdown(level_tile("resistance", "🎯 โซนขาย 2", sell2, "แนวต้าน R2"), unsafe_allow_html=True)
-    r2[2].markdown(level_tile("resistance", "🎯 โซนขาย 3", sell3, "แนวต้าน R3 · ไกลสุด"), unsafe_allow_html=True)
+    r2[0].markdown(level_tile("resistance", "🎯 โซนขาย 1", sell1, "แนวต้าน R1", sell1_st), unsafe_allow_html=True)
+    r2[1].markdown(level_tile("resistance", "🎯 โซนขาย 2", sell2, "แนวต้าน R2", sell2_st), unsafe_allow_html=True)
+    r2[2].markdown(level_tile("resistance", "🎯 โซนขาย 3", sell3, "แนวต้าน R3", sell3_st), unsafe_allow_html=True)
 
     # Risk/Reward
     if buy1 and stop_loss and sell1:
