@@ -17,38 +17,6 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 _sentiment_analyzer = SentimentIntensityAnalyzer()
 
 
-@st.cache_data(ttl=86400, show_spinner=False)
-def ai_analyze_ceo(api_key: str, ceo_name: str, ceo_title: str, company: str, sector: str) -> str:
-    """AI analysis of CEO/executive style, behavior, strengths, red flags. Cached 24h per person."""
-    if not api_key or not ceo_name:
-        return ""
-    try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
-            model="claude-haiku-4-5",
-            max_tokens=1200,
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"วิเคราะห์ **{ceo_name}** ตำแหน่ง {ceo_title} ของ **{company}** "
-                    f"(sector: {sector or 'ไม่ระบุ'}) เป็นภาษาไทย ใช้ข้อมูลสาธารณะที่คุณรู้:\n\n"
-                    "1. **สไตล์การบริหาร** (2-3 ประโยค) — Visionary / Operator / Aggressive / Conservative / อื่นๆ\n"
-                    "2. **บุคลิก & พฤติกรรม** — พูดจา / social media presence / กล้าเสี่ยงหรือรอบคอบ\n"
-                    "3. **จุดแข็งเด่น** (3 ข้อ, bullet)\n"
-                    "4. **จุดที่ควรระวัง / Red Flags** (2-3 ข้อ ถ้ามี — เช่น controversies, insider selling, over-promising)\n"
-                    "5. **Track Record สำคัญ** — 2-3 เหตุการณ์ที่สะท้อนตัวตน\n"
-                    "6. **นักลงทุนควรรู้อะไร** — จบด้วย 1 ประโยคสรุป\n\n"
-                    "ตรงไปตรงมา ไม่ยกยอ ไม่ต้องเกริ่น ถ้าไม่รู้จักคนนี้ให้บอกว่า 'ไม่มีข้อมูลสาธารณะเพียงพอ' "
-                    "และอย่าแต่งเรื่องขึ้นมา"
-                ),
-            }],
-        )
-        return msg.content[0].text
-    except Exception as e:
-        return f"❌ Error: {str(e)[:200]}"
-
-
 @st.cache_data(ttl=3600, show_spinner=False)
 def ai_summarize_news(api_key: str, ticker: str, news_signature: str, news_payload: str) -> str:
     """Cache key includes news signature so we re-summarize when news changes."""
@@ -3156,32 +3124,6 @@ with tab_stats:
                     name = o.get("name", "—")
                     title = o.get("title", "—")
                     st.markdown(f"• {name} — _{title}_")
-
-        # AI Analysis of CEO
-        api_key = st.session_state.get("anthropic_key", "")
-        if api_key and ceo.get("name"):
-            st.write("")
-            ai_c1, ai_c2 = st.columns([3, 1])
-            ai_c1.caption("💡 ให้ AI วิเคราะห์สไตล์การบริหาร บุคลิก จุดแข็ง/ระวัง โดยใช้ข้อมูลสาธารณะ")
-            if ai_c2.button("🤖 วิเคราะห์ CEO", use_container_width=True, key="ai_ceo_btn"):
-                with st.spinner("AI กำลังวิเคราะห์..."):
-                    ceo_analysis = ai_analyze_ceo(
-                        api_key,
-                        ceo.get("name", ""),
-                        ceo.get("title", ""),
-                        info.get("longName") or ticker,
-                        info.get("sector", ""),
-                    )
-                if ceo_analysis:
-                    with st.container(border=True):
-                        st.markdown(f"**🤖 AI วิเคราะห์ผู้บริหาร: {ceo.get('name')}**")
-                        st.caption("Powered by Claude Haiku 4.5 · cache 24 ชม.")
-                        st.markdown(ceo_analysis)
-        elif ceo.get("name"):
-            st.caption(
-                "💡 ใส่ Anthropic API key ใน sidebar (Options) เพื่อปลดล็อค "
-                "**AI วิเคราะห์ผู้บริหาร** — วิเคราะห์สไตล์ บุคลิก จุดแข็ง จุดระวัง"
-            )
 
     # === Insider Transactions ===
     insider_df = load_insider_trades(ticker)
