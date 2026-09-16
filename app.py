@@ -2581,7 +2581,12 @@ if st.session_state.page == "💼 พอร์ตของฉัน":
     st.write("")
     st.markdown('<div class="section-h">จัดการหุ้นในพอร์ต</div>', unsafe_allow_html=True)
 
-    add_tab, screenshot_tab, io_tab = st.tabs(["➕ เพิ่ม/แก้ไข", "📷 อัพโหลดภาพพอร์ต", "💾 บันทึก/โหลด"])
+    add_tab, csv_tab, screenshot_tab, io_tab = st.tabs([
+        "➕ เพิ่ม/แก้ไข",
+        "📄 นำเข้า CSV",
+        "📷 อัพโหลดภาพพอร์ต",
+        "💾 บันทึก/โหลด",
+    ])
 
     with add_tab:
         add_col1, add_col2, add_col3, add_col4 = st.columns([1.2, 1, 1, 0.8])
@@ -2614,6 +2619,132 @@ if st.session_state.page == "💼 พอร์ตของฉัน":
                 if del_cols[i % 6].button(f"🗑 {p['ticker']}", key=f"del_{p['ticker']}", use_container_width=True):
                     st.session_state.portfolio = [x for x in portfolio if x["ticker"] != p["ticker"]]
                     st.rerun()
+
+    with csv_tab:
+        st.caption(
+            "อัพโหลดไฟล์ CSV จาก app โบรก (Bualuang / Kasikorn Sec / IB / Robinhood ฯลฯ) "
+            "หรือทำเองใน Excel/Google Sheets"
+        )
+
+        with st.expander("📋 รูปแบบ CSV ที่ยอมรับ (คลิกดูตัวอย่าง)"):
+            st.markdown("""
+            **คอลัมน์ที่ต้องมี** (ชื่อเป็นอังกฤษ, case-insensitive):
+            - `ticker` / `symbol` / `stock` — รหัสหุ้น
+            - `shares` / `quantity` / `qty` — จำนวนหุ้น
+            - `cost` / `avg_cost` / `average_cost` / `price` — ต้นทุนต่อหุ้น
+
+            **ตัวอย่าง (ต้องมี header):**
+            ```csv
+            ticker,shares,cost
+            AAPL,10,150.50
+            NVTS,4.288,13.30
+            TSLA,5,200.00
+            PTT.BK,100,35.50
+            ```
+
+            **หมายเหตุ:**
+            - Ticker ต่างประเทศเช่น `AAPL`, `TSLA` → ใช้ตรงๆ
+            - หุ้นไทย → ต้องใส่ `.BK` ต่อท้าย เช่น `PTT.BK`, `KBANK.BK`
+            - Crypto → ใส่ `-USD` เช่น `BTC-USD`, `ETH-USD`
+            """)
+
+        # Sample CSV download
+        sample_csv = "ticker,shares,cost\nAAPL,10,150.50\nNVTS,4.288,13.30\nTSLA,5,200.00\n"
+        st.download_button(
+            "📥 ดาวน์โหลด CSV ตัวอย่าง",
+            data=sample_csv.encode("utf-8"),
+            file_name="portfolio_sample.csv",
+            mime="text/csv",
+        )
+
+        st.write("")
+        csv_file = st.file_uploader(
+            "อัพโหลดไฟล์ CSV",
+            type=["csv"],
+            key="upload_pf_csv",
+        )
+
+        if csv_file:
+            try:
+                df_csv = pd.read_csv(csv_file)
+                # Normalize column names
+                df_csv.columns = [c.lower().strip().replace(" ", "_") for c in df_csv.columns]
+                # Map variations
+                col_map = {}
+                for c in df_csv.columns:
+                    if c in ("ticker", "symbol", "stock"):
+                        col_map[c] = "ticker"
+                    elif c in ("shares", "quantity", "qty", "amount"):
+                        col_map[c] = "shares"
+                    elif c in ("cost", "avg_cost", "average_cost", "avg_price", "price", "cost_per_share"):
+                        col_map[c] = "cost"
+                df_csv = df_csv.rename(columns=col_map)
+
+                required = {"ticker", "shares", "cost"}
+                missing = required - set(df_csv.columns)
+                if missing:
+                    st.error(f"❌ ขาดคอลัมน์: {', '.join(missing)} — ดูรูปแบบด้านบน")
+                else:
+                    # Parse rows
+                    parsed_rows = []
+                    for _, row in df_csv.iterrows():
+                        try:
+                            t = str(row["ticker"]).upper().strip()
+                            s = float(row["shares"])
+                            c = float(row["cost"])
+                            if t and s > 0 and c > 0:
+                                parsed_rows.append({"ticker": t, "shares": s, "cost": c})
+                        except (ValueError, TypeError):
+                            continue
+
+                    if not parsed_rows:
+                        st.warning("⚠️ ไม่มีข้อมูลที่ใช้ได้ในไฟล์")
+                    else:
+                        st.success(f"✅ อ่านได้ **{len(parsed_rows)} หุ้น** — ตรวจสอบก่อนนำเข้า")
+                        preview_df = pd.DataFrame([{
+                            "หุ้น": r["ticker"],
+                            "จำนวน": f"{r['shares']:g}",
+                            "ต้นทุน/หุ้น": f"${r['cost']:,.2f}",
+                            "ต้นทุนรวม": f"${r['shares'] * r['cost']:,.2f}",
+                        } for r in parsed_rows])
+                        st.dataframe(preview_df, use_container_width=True, hide_index=True)
+
+                        cimp1, cimp2 = st.columns(2)
+                        if cimp1.button("➕ นำเข้า (รวมกับที่มี — weighted avg)", use_container_width=True, key="csv_merge"):
+                            for r in parsed_rows:
+                                existing = next((i for i, p in enumerate(portfolio) if p["ticker"] == r["ticker"]), None)
+                                if existing is not None:
+                                    old = portfolio[existing]
+                                    total_shares = old["shares"] + r["shares"]
+                                    avg_cost = (old["shares"] * old["cost"] + r["shares"] * r["cost"]) / total_shares
+                                    portfolio[existing] = {"ticker": r["ticker"], "shares": total_shares, "cost": avg_cost}
+                                else:
+                                    portfolio.append(r)
+                            st.session_state.portfolio = portfolio
+                            st.success(f"นำเข้า {len(parsed_rows)} หุ้นสำเร็จ")
+                            st.rerun()
+                        if cimp2.button("🔄 แทนที่ทั้งหมด (ล้างของเดิม)", use_container_width=True, key="csv_replace"):
+                            st.session_state.portfolio = parsed_rows
+                            st.success(f"แทนที่พอร์ตด้วย {len(parsed_rows)} หุ้น")
+                            st.rerun()
+            except Exception as e:
+                st.error(f"❌ อ่านไฟล์ไม่สำเร็จ: {e}")
+
+        # Export current portfolio as CSV
+        if portfolio:
+            st.write("")
+            st.markdown("**Export พอร์ตปัจจุบัน**")
+            export_df = pd.DataFrame([{
+                "ticker": p["ticker"],
+                "shares": p["shares"],
+                "cost": p["cost"],
+            } for p in portfolio])
+            st.download_button(
+                "📤 ดาวน์โหลดพอร์ตเป็น CSV",
+                data=export_df.to_csv(index=False).encode("utf-8"),
+                file_name=f"my_portfolio_{datetime.now():%Y%m%d}.csv",
+                mime="text/csv",
+            )
 
     with screenshot_tab:
         st.caption(
