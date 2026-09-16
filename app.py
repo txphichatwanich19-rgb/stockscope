@@ -2010,8 +2010,8 @@ if "profile_pic" not in st.session_state:
     st.session_state.profile_pic = None
 if "profile_name" not in st.session_state:
     st.session_state.profile_name = "นักลงทุน"
-if "portfolio_screenshot" not in st.session_state:
-    st.session_state.portfolio_screenshot = None
+if "portfolio_screenshots" not in st.session_state:
+    st.session_state.portfolio_screenshots = []  # list of bytes
 
 with st.sidebar:
     st.markdown(
@@ -2616,21 +2616,42 @@ if st.session_state.page == "💼 พอร์ตของฉัน":
                     st.rerun()
 
     with screenshot_tab:
-        st.caption("อัพโหลดภาพหน้าจอพอร์ต (จาก app โบรก) เพื่อเก็บไว้เป็นบันทึก · ไม่มีการวิเคราะห์อัตโนมัติ ให้กรอกใน tab '➕ เพิ่ม' เอง")
-        pf_shot = st.file_uploader(
-            "อัพโหลดภาพหน้าจอพอร์ต",
-            type=["png", "jpg", "jpeg", "webp"],
-            key="upload_pf_shot",
+        st.caption(
+            "อัพโหลดภาพหน้าจอพอร์ตจาก app โบรกได้หลายภาพ · เก็บไว้เป็นบันทึก "
+            "· ไม่มีการวิเคราะห์อัตโนมัติ (ให้กรอกที่ tab '➕ เพิ่ม/แก้ไข' เอง)"
         )
-        if pf_shot:
-            if st.button("💾 บันทึกภาพ"):
-                st.session_state.portfolio_screenshot = pf_shot.read()
-                st.rerun()
-        if st.session_state.portfolio_screenshot:
-            st.image(st.session_state.portfolio_screenshot, caption="ภาพพอร์ตล่าสุด", use_column_width=True)
-            if st.button("🗑 ลบภาพ"):
-                st.session_state.portfolio_screenshot = None
-                st.rerun()
+        pf_shots = st.file_uploader(
+            "อัพโหลดภาพหน้าจอพอร์ต (เลือกได้หลายภาพ)",
+            type=["png", "jpg", "jpeg", "webp"],
+            accept_multiple_files=True,
+            key="upload_pf_shots",
+        )
+        c1s, c2s = st.columns(2)
+        if pf_shots and c1s.button(f"💾 บันทึก {len(pf_shots)} ภาพ", use_container_width=True):
+            for f in pf_shots:
+                st.session_state.portfolio_screenshots.append(f.read())
+            st.rerun()
+        if st.session_state.portfolio_screenshots and c2s.button(
+            f"🗑 ลบทั้งหมด ({len(st.session_state.portfolio_screenshots)} ภาพ)",
+            use_container_width=True,
+        ):
+            st.session_state.portfolio_screenshots = []
+            st.rerun()
+
+        if st.session_state.portfolio_screenshots:
+            st.write("")
+            st.caption(f"📸 มีภาพที่บันทึกไว้ทั้งหมด {len(st.session_state.portfolio_screenshots)} ภาพ")
+            # Display in grid (3 columns)
+            imgs = st.session_state.portfolio_screenshots
+            for row_start in range(0, len(imgs), 3):
+                cols_img = st.columns(3)
+                for j, img_bytes in enumerate(imgs[row_start:row_start + 3]):
+                    idx = row_start + j
+                    with cols_img[j]:
+                        st.image(img_bytes, caption=f"ภาพที่ {idx + 1}", use_container_width=True)
+                        if st.button("🗑 ลบภาพนี้", key=f"del_shot_{idx}", use_container_width=True):
+                            st.session_state.portfolio_screenshots.pop(idx)
+                            st.rerun()
 
     with io_tab:
         st.caption("บันทึกพอร์ตเป็นไฟล์ JSON เก็บไว้เอง → อัพโหลดกลับเมื่อกลับมา (session state จะรีเซ็ตเมื่อปิดแท็บ)")
