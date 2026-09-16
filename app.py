@@ -46,6 +46,70 @@ def ai_summarize_news(api_key: str, ticker: str, news_signature: str, news_paylo
         return f"❌ Error: {str(e)[:200]}"
 
 
+def ai_extract_portfolio_from_image(api_key: str, image_bytes: bytes, image_mime: str = "image/png") -> list[dict]:
+    """Use Claude Vision to extract portfolio holdings from a broker app screenshot.
+    Returns a list of {"ticker": str, "shares": float, "cost": float}."""
+    if not api_key or not image_bytes:
+        return []
+    try:
+        import anthropic, base64, json as _json
+        client = anthropic.Anthropic(api_key=api_key)
+        b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
+        msg = client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=2048,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {"type": "base64", "media_type": image_mime, "data": b64},
+                    },
+                    {
+                        "type": "text",
+                        "text": (
+                            "This is a screenshot from a stock broker app showing a user's portfolio holdings.\n"
+                            "Extract every stock/asset visible in the image and return ONLY a JSON array (no markdown, no explanation).\n"
+                            "Each item must have exactly these keys:\n"
+                            '  "ticker": stock symbol (string, uppercase). If it is a Thai stock (SET), append ".BK" (e.g. "PTT.BK"). '
+                            'If it is crypto, append "-USD" (e.g. "BTC-USD"). US stocks stay as-is.\n'
+                            '  "shares": number of shares/units owned (float, positive)\n'
+                            '  "cost": average cost per share/unit in the currency shown (float, positive)\n\n'
+                            "Rules:\n"
+                            "- If shares or cost is unclear, skip that row (do NOT guess).\n"
+                            "- If the image is not a portfolio, return [].\n"
+                            "- Do NOT include current price or market value — only cost basis.\n"
+                            "- Return valid JSON only. Example: "
+                            '[{"ticker":"AAPL","shares":10,"cost":150.5},{"ticker":"PTT.BK","shares":100,"cost":35.25}]'
+                        ),
+                    },
+                ],
+            }],
+        )
+        text = msg.content[0].text.strip()
+        # Strip markdown code fences if AI added them
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip()
+        data = _json.loads(text)
+        # Validate + clean
+        out = []
+        for row in data:
+            try:
+                t = str(row.get("ticker", "")).strip().upper()
+                s = float(row.get("shares", 0))
+                c = float(row.get("cost", 0))
+                if t and s > 0 and c > 0:
+                    out.append({"ticker": t, "shares": s, "cost": c})
+            except Exception:
+                continue
+        return out
+    except Exception as e:
+        return [{"_error": f"{type(e).__name__}: {str(e)[:200]}"}]
+
+
 def sentiment_score(text: str) -> float:
     """Return VADER compound score: -1 (very neg) to +1 (very pos)."""
     if not text:
@@ -2748,8 +2812,8 @@ if st.session_state.page == "💼 พอร์ตของฉัน":
 
     with screenshot_tab:
         st.caption(
-            "อัพโหลดภาพหน้าจอพอร์ตจาก app โบรกได้หลายภาพ · เก็บไว้เป็นบันทึก "
-            "· ไม่มีการวิเคราะห์อัตโนมัติ (ให้กรอกที่ tab '➕ เพิ่ม/แก้ไข' เอง)"
+            "อัพโหลดภาพหน้าจอพอร์ตจาก app โบรก · เก็บไว้เป็นบันทึกได้ "
+            "· หรือกด **🤖 วิเคราะห์ด้วย AI** ให้ระบบดึงข้อมูลหุ้นมาเติมพอร์ตอัตโนมัติ"
         )
         pf_shots = st.file_uploader(
             "อัพโหลดภาพหน้าจอพอร์ต (เลือกได้หลายภาพ)",
@@ -2757,17 +2821,104 @@ if st.session_state.page == "💼 พอร์ตของฉัน":
             accept_multiple_files=True,
             key="upload_pf_shots",
         )
-        c1s, c2s = st.columns(2)
-        if pf_shots and c1s.button(f"💾 บันทึก {len(pf_shots)} ภาพ", use_container_width=True):
+
+        has_api_key = bool(st.session_state.get("anthropic_key", "").strip())
+
+        c1s, c2s, c3s = st.columns(3)
+        if pf_shots and c1s.button(f"💾 บันทึกภาพ ({len(pf_shots)})", use_container_width=True):
             for f in pf_shots:
                 st.session_state.portfolio_screenshots.append(f.read())
             st.rerun()
-        if st.session_state.portfolio_screenshots and c2s.button(
-            f"🗑 ลบทั้งหมด ({len(st.session_state.portfolio_screenshots)} ภาพ)",
+
+        ai_disabled = not (pf_shots and has_api_key)
+        ai_label = f"🤖 วิเคราะห์ด้วย AI ({len(pf_shots)} ภาพ)" if pf_shots else "🤖 วิเคราะห์ด้วย AI"
+        if c2s.button(ai_label, use_container_width=True, disabled=ai_disabled, type="primary"):
+            api_key = st.session_state.get("anthropic_key", "")
+            all_rows = []
+            errors = []
+            prog = st.progress(0.0, text="กำลังวิเคราะห์…")
+            for i, f in enumerate(pf_shots):
+                prog.progress((i) / len(pf_shots), text=f"กำลังวิเคราะห์ภาพที่ {i+1}/{len(pf_shots)}…")
+                img_bytes = f.read()
+                mime = "image/png"
+                nm = (f.name or "").lower()
+                if nm.endswith((".jpg", ".jpeg")): mime = "image/jpeg"
+                elif nm.endswith(".webp"): mime = "image/webp"
+                rows = ai_extract_portfolio_from_image(api_key, img_bytes, mime)
+                for r in rows:
+                    if "_error" in r:
+                        errors.append(f"ภาพที่ {i+1}: {r['_error']}")
+                    else:
+                        all_rows.append(r)
+            prog.progress(1.0, text="เสร็จสิ้น")
+            st.session_state["ai_extracted_rows"] = all_rows
+            st.session_state["ai_extract_errors"] = errors
+            st.rerun()
+
+        if st.session_state.portfolio_screenshots and c3s.button(
+            f"🗑 ลบภาพทั้งหมด ({len(st.session_state.portfolio_screenshots)})",
             use_container_width=True,
         ):
             st.session_state.portfolio_screenshots = []
             st.rerun()
+
+        # Helper text about AI feature
+        if not has_api_key:
+            st.info(
+                "💡 **ต้องการให้ AI อ่านรูปให้อัตโนมัติ?** ใส่ Anthropic API key ที่ sidebar → "
+                "expander **🤖 AI สรุปข่าว (Claude)** ก่อน (ฟรี $5 ตอนสมัคร · ค่าอ่านรูป ~$0.001-0.003 ต่อภาพ)"
+            )
+        elif not pf_shots:
+            st.caption("👆 เลือกภาพหน้าจอพอร์ตก่อน แล้วกด **🤖 วิเคราะห์ด้วย AI**")
+
+        # Show extracted results
+        ai_rows = st.session_state.get("ai_extracted_rows")
+        ai_errs = st.session_state.get("ai_extract_errors", [])
+        if ai_errs:
+            for er in ai_errs:
+                st.error(er)
+        if ai_rows is not None:
+            if not ai_rows:
+                st.warning("🤖 AI ไม่พบข้อมูลหุ้นในภาพที่อัพโหลด · ลองใช้ภาพที่ชัดกว่าเดิม หรือกรอกเองที่ tab **➕ เพิ่ม/แก้ไข**")
+            else:
+                st.success(f"🤖 AI ดึงข้อมูลได้ **{len(ai_rows)} รายการ** · ตรวจสอบก่อนนำเข้า")
+                preview_df = pd.DataFrame(ai_rows)
+                st.dataframe(preview_df, use_container_width=True, hide_index=True)
+
+                ic1, ic2, ic3 = st.columns(3)
+                if ic1.button("➕ นำเข้า (รวมกับที่มี)", use_container_width=True, type="primary", key="ai_merge"):
+                    existing = {r["ticker"].upper(): r for r in st.session_state.portfolio}
+                    for r in ai_rows:
+                        t = r["ticker"].upper()
+                        if t in existing:
+                            old = existing[t]
+                            total_shares = old["shares"] + r["shares"]
+                            weighted_cost = (
+                                (old["shares"] * old["cost"] + r["shares"] * r["cost"]) / total_shares
+                                if total_shares > 0 else r["cost"]
+                            )
+                            old["shares"] = total_shares
+                            old["cost"] = weighted_cost
+                        else:
+                            existing[t] = {"ticker": t, "shares": r["shares"], "cost": r["cost"]}
+                    st.session_state.portfolio = list(existing.values())
+                    st.session_state.pop("ai_extracted_rows", None)
+                    st.session_state.pop("ai_extract_errors", None)
+                    st.success(f"✅ นำเข้า {len(ai_rows)} รายการเรียบร้อย")
+                    st.rerun()
+                if ic2.button("🔄 แทนที่พอร์ต", use_container_width=True, key="ai_replace"):
+                    st.session_state.portfolio = [
+                        {"ticker": r["ticker"].upper(), "shares": r["shares"], "cost": r["cost"]}
+                        for r in ai_rows
+                    ]
+                    st.session_state.pop("ai_extracted_rows", None)
+                    st.session_state.pop("ai_extract_errors", None)
+                    st.success(f"✅ แทนที่ด้วย {len(ai_rows)} รายการเรียบร้อย")
+                    st.rerun()
+                if ic3.button("❌ ยกเลิก", use_container_width=True, key="ai_cancel"):
+                    st.session_state.pop("ai_extracted_rows", None)
+                    st.session_state.pop("ai_extract_errors", None)
+                    st.rerun()
 
         if st.session_state.portfolio_screenshots:
             st.write("")
