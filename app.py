@@ -381,6 +381,34 @@ st.markdown(
     .ext-hours .ext-chip.up   { background: rgba(190,242,100,0.12); color: #d9f99d; border-color: rgba(190,242,100,0.35); }
     .ext-hours .ext-chip.down { background: rgba(251,113,133,0.12); color: #fda4af; border-color: rgba(251,113,133,0.35); }
 
+    /* Portfolio hero + avatar */
+    .pf-hero {
+        background: linear-gradient(135deg, #141a23 0%, #1a2028 100%);
+        border: 1px solid #1e2532;
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+    .pf-avatar-placeholder {
+        width: 110px; height: 110px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #a3e635 0%, #65a30d 100%);
+        color: #0a0e14;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Inter', sans-serif;
+        font-size: 3.2rem;
+        font-weight: 800;
+        box-shadow: 0 4px 14px rgba(163,230,53,0.3);
+    }
+    .pf-kpi-delta {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 0.25rem;
+    }
+    .pf-kpi-delta.up { color: #a3e635; }
+    .pf-kpi-delta.down { color: #f87171; }
+
     /* Stat tiles — SaaS KPI style */
     .tile {
         background: #141a23;
@@ -1976,6 +2004,14 @@ if "watchlist" not in st.session_state:
     st.session_state.watchlist = []
 if "page" not in st.session_state:
     st.session_state.page = "🌐 ภาพรวมตลาด"
+if "portfolio" not in st.session_state:
+    st.session_state.portfolio = []  # list of {"ticker": str, "shares": float, "cost": float}
+if "profile_pic" not in st.session_state:
+    st.session_state.profile_pic = None
+if "profile_name" not in st.session_state:
+    st.session_state.profile_name = "นักลงทุน"
+if "portfolio_screenshot" not in st.session_state:
+    st.session_state.portfolio_screenshot = None
 
 with st.sidebar:
     st.markdown(
@@ -1992,7 +2028,7 @@ with st.sidebar:
     )
 
     # Page navigation
-    PAGES = ["🌐 ภาพรวมตลาด", "📊 ดูหุ้น", "🔍 สแกนหุ้น"]
+    PAGES = ["🌐 ภาพรวมตลาด", "💼 พอร์ตของฉัน", "📊 ดูหุ้น", "🔍 สแกนหุ้น"]
     page = st.radio(
         "หน้า", PAGES,
         index=PAGES.index(st.session_state.page) if st.session_state.page in PAGES else 0,
@@ -2399,6 +2435,232 @@ if macro:
         )
     macro_html += "</div>"
     st.markdown(macro_html, unsafe_allow_html=True)
+
+# ========== PAGE: พอร์ตของฉัน ==========
+if st.session_state.page == "💼 พอร์ตของฉัน":
+    # --- Profile header ---
+    st.markdown('<div class="pf-hero">', unsafe_allow_html=True)
+    ph_col1, ph_col2 = st.columns([1, 5])
+    with ph_col1:
+        if st.session_state.profile_pic:
+            st.image(st.session_state.profile_pic, width=110)
+        else:
+            initials = st.session_state.profile_name[:1].upper() if st.session_state.profile_name else "?"
+            st.markdown(
+                f'<div class="pf-avatar-placeholder">{initials}</div>',
+                unsafe_allow_html=True,
+            )
+    with ph_col2:
+        st.markdown(f"## {st.session_state.profile_name}")
+        st.caption("พอร์ตการลงทุนส่วนตัว · ไม่มีการบันทึกบน server (ข้อมูลอยู่ในเบราว์เซอร์เท่านั้น)")
+
+        with st.expander("✏️ แก้ไขโปรไฟล์", expanded=False):
+            new_name = st.text_input("ชื่อของคุณ", value=st.session_state.profile_name)
+            uploaded_pic = st.file_uploader(
+                "อัพโหลดรูปโปรไฟล์",
+                type=["png", "jpg", "jpeg", "webp"],
+                key="upload_profile_pic",
+            )
+            colp1, colp2 = st.columns(2)
+            if colp1.button("💾 บันทึกโปรไฟล์"):
+                st.session_state.profile_name = new_name.strip() or "นักลงทุน"
+                if uploaded_pic:
+                    st.session_state.profile_pic = uploaded_pic.read()
+                st.rerun()
+            if colp2.button("🗑️ ล้างรูป"):
+                st.session_state.profile_pic = None
+                st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.write("")
+
+    # --- Fetch current prices for all holdings ---
+    portfolio = st.session_state.portfolio
+    if portfolio:
+        tickers_pf = tuple(sorted({p["ticker"] for p in portfolio}))
+        with st.spinner("กำลังโหลดราคาปัจจุบัน…"):
+            live = load_daily_movers(tickers_pf)
+        price_map = {m["sym"]: m["last"] for m in live}
+    else:
+        price_map = {}
+
+    # --- Compute portfolio stats ---
+    total_cost = sum(p["shares"] * p["cost"] for p in portfolio)
+    total_value = sum(p["shares"] * price_map.get(p["ticker"], p["cost"]) for p in portfolio)
+    pnl = total_value - total_cost
+    pnl_pct = (pnl / total_cost * 100) if total_cost > 0 else 0
+
+    # --- KPI cards ---
+    def _kpi(label, value, delta=None, delta_cls=None):
+        d = f'<div class="pf-kpi-delta {delta_cls or ""}">{delta}</div>' if delta else ""
+        return (
+            f'<div class="tile">'
+            f'<div class="label">{label}</div>'
+            f'<div class="value">{value}</div>'
+            f'{d}</div>'
+        )
+
+    k1, k2, k3, k4 = st.columns(4)
+    k1.markdown(_kpi("มูลค่าปัจจุบัน", f"${total_value:,.2f}"), unsafe_allow_html=True)
+    k2.markdown(_kpi("ต้นทุนรวม", f"${total_cost:,.2f}"), unsafe_allow_html=True)
+    pnl_cls = "up" if pnl >= 0 else "down"
+    pnl_sign = "+" if pnl >= 0 else ""
+    k3.markdown(
+        _kpi("กำไร/ขาดทุน", f"{pnl_sign}${pnl:,.2f}", None, pnl_cls),
+        unsafe_allow_html=True,
+    )
+    k4.markdown(
+        _kpi("% กำไร/ขาดทุน", f"{pnl_pct:+.2f}%", None, pnl_cls),
+        unsafe_allow_html=True,
+    )
+
+    st.write("")
+
+    # --- Allocation donut + Holdings table ---
+    if portfolio:
+        left, right = st.columns([1, 1.4])
+        with left:
+            st.markdown('<div class="section-h">สัดส่วนการถือ</div>', unsafe_allow_html=True)
+            alloc_data = []
+            for p in portfolio:
+                cur_price = price_map.get(p["ticker"], p["cost"])
+                mkt_val = p["shares"] * cur_price
+                alloc_data.append({"sym": p["ticker"], "value": mkt_val})
+            alloc_data.sort(key=lambda x: x["value"], reverse=True)
+
+            colors_palette = [
+                "#a3e635", "#3b82f6", "#f59e0b", "#ec4899",
+                "#8b5cf6", "#14b8a6", "#f87171", "#eab308",
+                "#22d3ee", "#fb923c", "#10b981", "#c084fc",
+            ]
+            fig_donut = go.Figure(data=[go.Pie(
+                labels=[a["sym"] for a in alloc_data],
+                values=[a["value"] for a in alloc_data],
+                hole=0.6,
+                marker=dict(colors=colors_palette[:len(alloc_data)], line=dict(color="#0a0e14", width=2)),
+                textfont=dict(family="Inter", size=12, color="#f5f5f5"),
+                textposition="outside",
+                textinfo="label+percent",
+            )])
+            fig_donut.update_layout(
+                height=380,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                showlegend=False,
+                margin=dict(l=10, r=10, t=20, b=10),
+                annotations=[dict(
+                    text=f"<b>{len(alloc_data)}</b><br><span style='font-size:12px;color:#8b95a5'>หุ้น</span>",
+                    x=0.5, y=0.5, showarrow=False,
+                    font=dict(family="Inter", size=28, color="#f5f5f5"),
+                )],
+            )
+            st.plotly_chart(fig_donut, use_container_width=True, config={"displaylogo": False})
+
+        with right:
+            st.markdown('<div class="section-h">รายละเอียดหุ้นที่ถือ</div>', unsafe_allow_html=True)
+            table_rows = []
+            for p in portfolio:
+                cur = price_map.get(p["ticker"], p["cost"])
+                mkt_val = p["shares"] * cur
+                p_cost = p["shares"] * p["cost"]
+                p_pnl = mkt_val - p_cost
+                p_pct = (p_pnl / p_cost * 100) if p_cost > 0 else 0
+                weight = (mkt_val / total_value * 100) if total_value > 0 else 0
+                table_rows.append({
+                    "หุ้น": p["ticker"],
+                    "จำนวน": f"{p['shares']:g}",
+                    "ต้นทุน/หุ้น": f"${p['cost']:,.2f}",
+                    "ราคาปัจจุบัน": f"${cur:,.2f}",
+                    "มูลค่า": f"${mkt_val:,.2f}",
+                    "กำไร/ขาดทุน": f"{'+' if p_pnl >= 0 else ''}${p_pnl:,.2f}",
+                    "%P/L": f"{p_pct:+.2f}%",
+                    "%พอร์ต": f"{weight:.1f}%",
+                })
+            st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
+
+    st.write("")
+    st.markdown('<div class="section-h">จัดการหุ้นในพอร์ต</div>', unsafe_allow_html=True)
+
+    add_tab, screenshot_tab, io_tab = st.tabs(["➕ เพิ่ม/แก้ไข", "📷 อัพโหลดภาพพอร์ต", "💾 บันทึก/โหลด"])
+
+    with add_tab:
+        add_col1, add_col2, add_col3, add_col4 = st.columns([1.2, 1, 1, 0.8])
+        new_ticker = add_col1.text_input("รหัสหุ้น", placeholder="AAPL, TSLA, PTT.BK", key="pf_new_ticker").upper().strip()
+        new_shares = add_col2.number_input("จำนวนหุ้น", min_value=0.0, value=0.0, step=1.0, key="pf_new_shares")
+        new_cost = add_col3.number_input("ต้นทุน/หุ้น", min_value=0.0, value=0.0, step=0.01, key="pf_new_cost")
+        add_col4.write("")
+        if add_col4.button("➕ เพิ่ม", use_container_width=True, key="pf_add_btn"):
+            if new_ticker and new_shares > 0 and new_cost > 0:
+                # merge if ticker exists (weighted avg)
+                existing = next((i for i, p in enumerate(portfolio) if p["ticker"] == new_ticker), None)
+                if existing is not None:
+                    old = portfolio[existing]
+                    new_total_shares = old["shares"] + new_shares
+                    new_avg_cost = (old["shares"] * old["cost"] + new_shares * new_cost) / new_total_shares
+                    portfolio[existing] = {"ticker": new_ticker, "shares": new_total_shares, "cost": new_avg_cost}
+                else:
+                    portfolio.append({"ticker": new_ticker, "shares": new_shares, "cost": new_cost})
+                st.session_state.portfolio = portfolio
+                st.success(f"เพิ่ม {new_ticker} เรียบร้อย")
+                st.rerun()
+            else:
+                st.warning("กรอกรหัสหุ้น + จำนวน + ต้นทุน ให้ครบก่อน")
+
+        if portfolio:
+            st.write("")
+            st.caption("**ลบหุ้น**:")
+            del_cols = st.columns(min(6, len(portfolio)))
+            for i, p in enumerate(portfolio):
+                if del_cols[i % 6].button(f"🗑 {p['ticker']}", key=f"del_{p['ticker']}", use_container_width=True):
+                    st.session_state.portfolio = [x for x in portfolio if x["ticker"] != p["ticker"]]
+                    st.rerun()
+
+    with screenshot_tab:
+        st.caption("อัพโหลดภาพหน้าจอพอร์ต (จาก app โบรก) เพื่อเก็บไว้เป็นบันทึก · ไม่มีการวิเคราะห์อัตโนมัติ ให้กรอกใน tab '➕ เพิ่ม' เอง")
+        pf_shot = st.file_uploader(
+            "อัพโหลดภาพหน้าจอพอร์ต",
+            type=["png", "jpg", "jpeg", "webp"],
+            key="upload_pf_shot",
+        )
+        if pf_shot:
+            if st.button("💾 บันทึกภาพ"):
+                st.session_state.portfolio_screenshot = pf_shot.read()
+                st.rerun()
+        if st.session_state.portfolio_screenshot:
+            st.image(st.session_state.portfolio_screenshot, caption="ภาพพอร์ตล่าสุด", use_column_width=True)
+            if st.button("🗑 ลบภาพ"):
+                st.session_state.portfolio_screenshot = None
+                st.rerun()
+
+    with io_tab:
+        st.caption("บันทึกพอร์ตเป็นไฟล์ JSON เก็บไว้เอง → อัพโหลดกลับเมื่อกลับมา (session state จะรีเซ็ตเมื่อปิดแท็บ)")
+        import json as _json
+        if portfolio:
+            pf_json = _json.dumps({
+                "name": st.session_state.profile_name,
+                "portfolio": portfolio,
+            }, ensure_ascii=False, indent=2)
+            st.download_button(
+                "📥 ดาวน์โหลดพอร์ต (JSON)",
+                data=pf_json.encode("utf-8"),
+                file_name=f"portfolio_{datetime.now():%Y%m%d}.json",
+                mime="application/json",
+            )
+        uploaded_json = st.file_uploader("📤 อัพโหลดไฟล์พอร์ต (JSON)", type=["json"], key="upload_pf_json")
+        if uploaded_json and st.button("🔄 โหลด"):
+            try:
+                data = _json.loads(uploaded_json.read())
+                st.session_state.portfolio = data.get("portfolio", [])
+                if data.get("name"):
+                    st.session_state.profile_name = data["name"]
+                st.success("โหลดสำเร็จ")
+                st.rerun()
+            except Exception as e:
+                st.error(f"ไฟล์ไม่ถูกต้อง: {e}")
+
+    if not portfolio:
+        st.info("💡 ยังไม่มีหุ้นในพอร์ต — เริ่มด้วยการกรอกที่ tab **➕ เพิ่ม/แก้ไข** ด้านบน")
+    st.stop()
 
 # ========== PAGE: สแกนหุ้น ==========
 if st.session_state.page == "🔍 สแกนหุ้น":
