@@ -31,9 +31,17 @@ jupyter notebook stock_direction_model.ipynb
 10. Illustrative backtest (clearly labeled as academic, not investment advice)
 11. Limitations & conclusion
 
+## Slides
+
+`stock_direction_presentation.pptx` — 15-slide deck following the course's suggested format
+(Motivation → Dataset → Methodology → Results → Impact & Q&A), built from the notebook's actual
+numbers. Source/regeneration scripts are in `slides/`. Fill in the team name/members placeholders
+on slides 1–2 before presenting.
+
 ## Before you present — fill these in
 
-- [ ] Team info table at the top of the notebook (Group No. / Name / student names & IDs)
+- [ ] Team info table at the top of the notebook, and on slides 1–2 of the deck
+      (Group No. / Name / student names & IDs)
 - [ ] Register the topic in the course's sign-up CSV: **Project Topic**, **Model/Task Type =
       "Binary Classification (XGBoost)"**
 - [ ] Re-run the whole notebook once before presenting so the output cells/plots are current

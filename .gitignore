@@ -9,3 +9,6 @@ venv/
 .DS_Store
 Thumbs.db
 .claude/
+ml/slides/node_modules/
+ml/slides/icons/
+
