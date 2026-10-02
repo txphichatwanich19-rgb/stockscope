@@ -247,9 +247,9 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   });
 
   const reasons = [
-    ["zap", "เทรนเร็ว", "รันจบในไม่กี่วินาที บนโน้ตบุ๊กหรือ Colab ฟรี"],
+    ["zap", "เทรนเร็ว", "ฝึกบน CPU ได้ และตรวจผลซ้ำได้ใน Notebook"],
     ["layers", "เหมาะกับข้อมูลตาราง", "ฟีเจอร์ของเราคือตัวเลขอินดิเคเตอร์ ไม่ใช่รูปภาพหรือข้อความ"],
-    ["target", "อธิบายได้", "Feature Importance บอกได้ว่า “ทำไม” ไม่ใช่แค่ตัวเลข"],
+    ["target", "อธิบายได้", "Feature Importance ช่วยดูว่าโมเดลใช้ฟีเจอร์ใด"],
   ];
   let ry = 4.55;
   reasons.forEach((r) => {
@@ -326,8 +326,12 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   s.addText("AAPL · MSFT · NVDA · JPM · XOM\nJNJ · AMZN · KO · GOOGL · META\nWMT · PG · V · MA · DIS\nNFLX · AMD · INTC · BAC · CVX", {
     x: 8.35, y: 2.5, w: 4.1, h: 2.0, fontFace: "Courier New", fontSize: 13, color: C.white, isTextBox: true, margin: 0, lineSpacing: 26,
   });
-  s.addText("หลายอุตสาหกรรม ไม่ใช่หุ้นเดียว — ลดความเสี่ยงที่โมเดลจะเรียนรู้พฤติกรรมเฉพาะของบริษัทเดียว แทนที่จะเป็นพฤติกรรมทั่วไปของอินดิเคเตอร์", {
-    x: 8.35, y: 4.75, w: 4.05, h: 1.8, fontFace: FONT, fontSize: 12, color: C.muted, isTextBox: true, margin: 0, valign: "top",
+  s.addText("สิ่งที่เห็นจากข้อมูล", { x: 8.35, y: 4.7, w: 4.05, h: 0.3, fontFace: FONT, fontSize: 12, bold: true, color: C.lime, isTextBox: true, margin: 0 });
+  s.addText("Train: วันขึ้น 52.0%  ·  Test: วันขึ้น 51.3%", { x: 8.35, y: 5.1, w: 4.05, h: 0.35, fontFace: FONT, fontSize: 12, color: C.white, isTextBox: true, margin: 0 });
+  s.addText("ข้อมูล OHLCV ขาดหาย 0 ค่า", { x: 8.35, y: 5.5, w: 4.05, h: 0.35, fontFace: FONT, fontSize: 12, color: C.white, isTextBox: true, margin: 0 });
+  s.addText("ข้อจำกัด: เฉพาะหุ้นที่ยังจดทะเบียนอยู่", { x: 8.35, y: 5.9, w: 4.05, h: 0.35, fontFace: FONT, fontSize: 12, color: C.muted, isTextBox: true, margin: 0 });
+  s.addText("หลายอุตสาหกรรม ไม่ใช่หุ้นเดียว — ลดความเสี่ยงที่โมเดลเรียนรู้เฉพาะบริษัทเดียว", {
+    x: 0.6, y: 6.3, w: 7.0, h: 0.3, fontFace: FONT, fontSize: 11, italic: true, color: C.muted, isTextBox: true, margin: 0,
   });
 }
 
@@ -385,7 +389,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   panelBox(s, { x: 6.85, y: 1.95, w: 5.85, h: 3.0, fill: C.panel2 });
   s.addImage({ path: icon("check-circle", "lime"), x: 7.15, y: 2.2, w: 0.4, h: 0.4 });
   s.addText("ตัดข้อมูลตามวันที่เดียวทั้งชุด", { x: 7.7, y: 2.22, w: 4.8, h: 0.4, fontFace: FONT, fontSize: 16, bold: true, color: C.lime, isTextBox: true, margin: 0 });
-  s.addText("ทุกแถวของ train เกิดก่อนทุกแถวของ test ทั้ง 20 หุ้นพร้อมกัน และตัดแถว train ที่ label (วันที่เป้าหมาย) ไปถึงช่วง test ออก (purge) — เทรนจากอดีต ทดสอบกับอนาคตที่ไม่เคยเห็น", {
+  s.addText("ทุกแถวของ train เกิดก่อนทุกแถวของ test ทั้ง 20 หุ้นพร้อมกัน และตัดแถว train ที่ label (วันที่เป้าหมาย) ไปถึงช่วง test ออก (purge) การทำ CV ก็แบ่งตามวันที่และ purge เช่นกัน — เทรนจากอดีต ทดสอบกับอนาคตที่ไม่เคยเห็น", {
     x: 7.15, y: 2.85, w: 5.2, h: 1.9, fontFace: FONT, fontSize: 13, color: C.white, isTextBox: true, margin: 0, valign: "top",
   });
 
@@ -487,7 +491,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   });
 
   panelBox(s, { x: 0.6, y: 5.55, w: 12.1, h: 1.15 });
-  s.addText("ทุกโมเดลใกล้เคียง baseline ที่ทายกลุ่มมากสุดอย่างเดียว (51.3%) — ไม่มีโมเดลไหนชนะชัดเจน ช่วงความเชื่อมั่น 95% ของ ROC-AUC ของ XGBoost คือ 0.485–0.516 ครอบคลุม 0.5 จึงยังไม่พบว่าดีกว่าการเดาสุ่ม (แต่ไม่ได้พิสูจน์ว่าเท่ากับ 0.5 พอดี)", {
+  s.addText("XGBoost: accuracy 50.6% เทียบ baseline ที่ทายกลุ่มมากสุด 51.3% · ROC-AUC 0.5005 (ช่วงความเชื่อมั่น 95% คือ 0.485–0.516 ครอบคลุม 0.5) จึงยังไม่พบว่าดีกว่าการเดาสุ่ม แต่ไม่ได้พิสูจน์ว่าเท่ากับ 0.5 พอดี · Logistic Regression และ Random Forest อยู่ในระดับใกล้เคียงกัน", {
     x: 0.95, y: 5.55, w: 11.4, h: 1.15, fontFace: FONT, fontSize: 14, color: C.white, isTextBox: true, margin: 0, valign: "middle",
   });
 }
@@ -539,6 +543,9 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   s.addText("สุ่มล้วนๆ = 0.500", { x: 8.8, y: 5.0, w: 3.6, h: 0.3, fontFace: FONT, fontSize: 10, italic: true, color: C.mutedDark, isTextBox: true, margin: 0 });
   s.addText("ทุกระยะเวลา ช่วงความเชื่อมั่นครอบคลุม 0.5 — ยังไม่พบสัญญาณที่ดีกว่าการสุ่ม สอดคล้องกับทฤษฎีตลาดมีประสิทธิภาพ (แต่ไม่ได้พิสูจน์)", {
     x: 8.8, y: 5.3, w: 3.7, h: 0.9, fontFace: FONT, fontSize: 12, color: C.white, isTextBox: true, margin: 0, valign: "top",
+  });
+  s.addText("หมายเหตุ: ตัวเลขทั้งหมดมาจากการรันบน Colab (ข้อมูล 2021-10-04 ถึง 2026-10-01) · รันต่างเครื่องหรือต่างเวอร์ชันไลบรารีอาจต่างกันเล็กน้อย (ที่เจอไม่เกิน ~0.005 ของ AUC) ข้อสรุปไม่เปลี่ยน", {
+    x: 0.6, y: 6.5, w: 12.1, h: 0.3, fontFace: FONT, fontSize: 10, italic: true, color: C.mutedDark, isTextBox: true, margin: 0,
   });
 }
 
@@ -604,7 +611,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   panelBox(s, { x: 0.6, y: 5.15, w: 12.1, h: 1.55 });
   s.addImage({ path: icon("target", "lime"), x: 0.9, y: 5.4, w: 0.35, h: 0.35 });
   s.addText("ทำไมซื้อแล้วถือถึงชนะ", { x: 1.4, y: 5.4, w: 5, h: 0.35, fontFace: FONT, fontSize: 14, bold: true, color: C.white, isTextBox: true, margin: 0 });
-  s.addText("โมเดลถือหุ้นเพียง ~20% ของเวลา ขณะที่ช่วง test ตลาดโดยรวมขึ้น การอยู่ในเงินสดทำให้พลาดวันขึ้นไปหลายวัน และโมเดลไม่มีความได้เปรียบทางสถิติมาชดเชย — ความได้เปรียบทางสถิติเล็กน้อยไม่เท่ากับกลยุทธ์ที่ทำกำไรได้จริง", {
+  s.addText("กลยุทธ์ถือหุ้นเฉลี่ยราว 20% ของโอกาสทั้งหมดและได้ผลต่ำกว่าซื้อแล้วถือ ช่วง test ตลาดโดยรวมขึ้น การอยู่ในเงินสดจึงพลาดวันขึ้นไปหลายวัน การจำลองนี้ไม่รวมต้นทุนและซื้อที่ราคาปิดวันเดียวกับสัญญาณ ซึ่งทำจริงไม่ได้เป๊ะ — ความได้เปรียบทางสถิติเล็กน้อยไม่เท่ากับกลยุทธ์ที่ทำกำไรได้จริง", {
     x: 0.9, y: 5.8, w: 11.5, h: 0.85, fontFace: FONT, fontSize: 13, color: C.muted, isTextBox: true, margin: 0, valign: "top",
   });
 }
@@ -621,7 +628,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
     ["alert-triangle", "ไม่พบความได้เปรียบทางสถิติ", "ช่วงความเชื่อมั่น 95% ของ ROC-AUC ครอบคลุม 0.5 ทุกโมเดล ทุก horizon — รายงานตามจริง ไม่ปรับแต่งให้ดูดี"],
     ["database", "ไม่มีข้อมูลปัจจัยพื้นฐานหรือเศรษฐกิจมหภาค", "ไม่มีผลประกอบการ อัตราดอกเบี้ย หรือข่าวสารอยู่ในชุดฟีเจอร์"],
     ["layers", "Survivorship Bias", "ใช้เฉพาะบริษัทใหญ่ที่ยังจดทะเบียนอยู่ — ไม่รวมหุ้นที่ถูกถอดออกจากตลาด"],
-    ["shield", "ไม่รวมต้นทุนการซื้อขาย", "การทดสอบย้อนหลังไม่ได้รวมค่าธรรมเนียม ส่วนต่างราคา หรือภาษี"],
+    ["shield", "ไม่รวมต้นทุนการซื้อขาย", "ไม่รวมค่าธรรมเนียม ส่วนต่างราคา หรือภาษี และสมมติซื้อที่ราคาปิดวันเดียวกับที่ได้สัญญาณ"],
     ["activity", "ตัวอย่างอิสระจริงมีน้อยกว่าจำนวนแถว", "20 หุ้นขยับพร้อมกันทุกวัน และ label ของวันติดกันซ้อนทับกัน จึงใช้ block bootstrap ประเมินความไม่แน่นอน"],
   ];
   let ly = 1.9;
@@ -644,7 +651,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   const insights = [
     "ไปป์ไลน์ไม่รั่วไหลข้อมูล: label แยกจากฟีเจอร์ มี purge และเลือก horizon/hyperparameter จากชุด train เท่านั้น",
     "ยังไม่พบว่าโมเดลไหน (รวม XGBoost) ดีกว่าการเดาสุ่ม — ช่วงความเชื่อมั่นของ AUC ครอบคลุม 0.5 ทุก horizon",
-    "ความสำคัญของฟีเจอร์อยู่ในช่วงแคบ ไม่มีตัวเด่น — สอดคล้องกับ (แต่ไม่ได้พิสูจน์) ทฤษฎีตลาดมีประสิทธิภาพ",
+    "Feature Importance บอกว่าโมเดลใช้ฟีเจอร์ใด แต่ต้องดูผลทดสอบเพื่อประเมินความสามารถทำนาย",
     "ผลลัพธ์ “ไม่พบ” ก็เป็นข้อค้นพบ — คุณค่าของงานนี้คือวิธีประเมินที่เชื่อถือได้",
   ];
   let iny = 2.55;

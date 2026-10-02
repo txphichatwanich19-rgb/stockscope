@@ -60,11 +60,20 @@ weak-form market efficiency but does not prove it; the project's value is a leak
 whose evaluation can be trusted. See the Limitations section in the notebook.
 
 The numbers on slides 5 and 7–14 come from the notebook's saved Colab run (it also prints a
-`PRESENTATION_RESULTS_JSON` line for exactly this purpose). If you re-run and any number changes,
-update `slides/build_deck.js` and rebuild.
+`PRESENTATION_RESULTS_JSON` line for exactly this purpose): XGBoost test ROC-AUC 0.5005, 95% interval
+0.485–0.516, strategy 1.078x vs buy-and-hold 1.276x. If you re-run and any number changes, update
+`slides/build_deck.js` and rebuild.
 
 ## About the notebook file
 
-`stock_direction_model.ipynb` is the version edited and run in Colab (with saved outputs) and is the
-source of truth. `build_notebook.py` is the earlier generator and is **outdated — do not run it**, it
-would overwrite this notebook with an older version.
+`stock_direction_model.ipynb` is the version run in Colab, with its saved outputs, and is the source of
+truth. Its final summary cell prints the numbers from the actual run (so text and results cannot drift
+apart), and it records the library versions used (Colab run: Python 3.13, xgboost 3.4.1,
+scikit-learn 1.6.1, pandas 2.2.3).
+
+XGBoost results can differ slightly between machines even with the same data window and seed: the
+same code gave test ROC-AUC 0.5005 on Colab and about 0.505 on Windows PCs. The conclusion is the same
+(every 95% interval contains 0.5), but **present from the Colab run**, and keep the slides matched to it.
+
+`build_notebook.py` is an earlier generator and is **outdated - do not run it**; it would overwrite this
+notebook with an older version.
