@@ -1,6 +1,9 @@
-"""Generates stock_direction_model.ipynb from code below.
-Run this once with `python build_notebook.py` whenever the pipeline changes;
-it regenerates the .ipynb deterministically. Requires: pip install nbformat
+"""OUTDATED - do not run. This generated an earlier version of stock_direction_model.ipynb.
+
+The notebook was later edited directly in Colab (date-based purge by target_date, CV over unique
+dates, fixed data snapshot, one-day backtest model) and that edited copy, with its saved outputs,
+is now the source of truth in this folder. Running this script would overwrite it with the older
+version, so it is kept only for history.
 """
 import nbformat as nbf
 

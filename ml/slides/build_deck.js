@@ -385,7 +385,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   panelBox(s, { x: 6.85, y: 1.95, w: 5.85, h: 3.0, fill: C.panel2 });
   s.addImage({ path: icon("check-circle", "lime"), x: 7.15, y: 2.2, w: 0.4, h: 0.4 });
   s.addText("ตัดข้อมูลตามวันที่เดียวทั้งชุด", { x: 7.7, y: 2.22, w: 4.8, h: 0.4, fontFace: FONT, fontSize: 16, bold: true, color: C.lime, isTextBox: true, margin: 0 });
-  s.addText("ทุกแถวของ train เกิดก่อนทุกแถวของ test ทั้ง 20 หุ้นพร้อมกัน และเว้นช่วงกัน (embargo) เท่ากับ horizon ก่อน cutoff เพื่อไม่ให้ label ของ train ไปแตะช่วง test — เทรนจากอดีต ทดสอบกับอนาคตที่ไม่เคยเห็น", {
+  s.addText("ทุกแถวของ train เกิดก่อนทุกแถวของ test ทั้ง 20 หุ้นพร้อมกัน และตัดแถว train ที่ label (วันที่เป้าหมาย) ไปถึงช่วง test ออก (purge) — เทรนจากอดีต ทดสอบกับอนาคตที่ไม่เคยเห็น", {
     x: 7.15, y: 2.85, w: 5.2, h: 1.9, fontFace: FONT, fontSize: 13, color: C.white, isTextBox: true, margin: 0, valign: "top",
   });
 
@@ -410,7 +410,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   const models = [
     ["Logistic Regression", "โมเดลเชิงเส้นพื้นฐานที่สุด (standardize ฟีเจอร์ก่อน)"],
     ["Random Forest", "โมเดล tree-ensemble อีกตัว ไม่มี boosting"],
-    ["XGBoost (ของเรา)", "เลือก horizon + hyperparameter ด้วย CV แบบเรียงตามเวลา — ใช้เฉพาะชุด train"],
+    ["XGBoost (ของเรา)", "เลือก horizon + hyperparameter ด้วย CV ตามวันที่ + purge — ใช้เฉพาะชุด train"],
   ];
   let mx = 0.6;
   models.forEach((m, i) => {
@@ -421,14 +421,14 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
     mx += 4.1;
   });
 
-  s.addText("เลือก HORIZON — TimeSeriesSplit (4 folds + gap) บนชุด train เท่านั้น", {
+  s.addText("เลือก HORIZON — TimeSeriesSplit (4 folds ตามวันที่ + purge) บนชุด train เท่านั้น", {
     x: 0.6, y: 4.15, w: 8, h: 0.35, fontFace: FONT, fontSize: 12, bold: true, color: C.muted, charSpacing: 1, isTextBox: true, margin: 0,
   });
 
   const grid = [
-    ["horizon = 1d  · max_depth=4", "CV AUC 0.507  ✓ ดีที่สุด"],
-    ["horizon = 5d  · max_depth=4", "CV AUC 0.494"],
-    ["horizon = 10d · max_depth=4", "CV AUC 0.483"],
+    ["horizon = 1d  · max_depth=3", "CV AUC 0.507  ✓ ดีที่สุด"],
+    ["horizon = 5d  · max_depth=4", "CV AUC 0.496"],
+    ["horizon = 10d · max_depth=4", "CV AUC 0.482"],
   ];
   let gy = 4.6;
   grid.forEach((g) => {
@@ -441,7 +441,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
 
   panelBox(s, { x: 9.1, y: 4.15, w: 3.6, h: 2.65, fill: C.panel2 });
   s.addText("ค่าที่ใช้จริง", { x: 9.4, y: 4.4, w: 3, h: 0.3, fontFace: FONT, fontSize: 11, color: C.muted, charSpacing: 1, isTextBox: true, margin: 0 });
-  s.addText("horizon: 1 day\nmax_depth: 4\nlearning_rate: 0.05\nn_estimators: 300\nsubsample: 0.8", {
+  s.addText("horizon: 1 day\nmax_depth: 3\nlearning_rate: 0.05\nn_estimators: 200\nsubsample: 0.8", {
     x: 9.4, y: 4.75, w: 3, h: 1.7, fontFace: "Courier New", fontSize: 14, color: C.lime, isTextBox: true, margin: 0, lineSpacing: 26,
   });
 }
@@ -455,8 +455,8 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   title(s, "เปรียบเทียบโมเดลบนชุดทดสอบ");
 
   const cats = ["Baseline", "LogReg", "Rand.Forest", "XGBoost"];
-  const accVals = [0.5127, 0.5160, 0.5139, 0.5062];
-  const aucVals = [0.50, 0.5129, 0.4998, 0.5050];
+  const accVals = [0.5127, 0.5160, 0.5135, 0.5060];
+  const aucVals = [0.50, 0.5129, 0.4999, 0.5005];
 
   s.addText("ความแม่นยำ (Accuracy)", { x: 0.6, y: 1.85, w: 5.8, h: 0.35, fontFace: FONT, fontSize: 14, bold: true, color: C.white, isTextBox: true, margin: 0 });
   s.addChart(pres.ChartType.bar, [{ name: "Accuracy", labels: cats, values: accVals }], {
@@ -487,7 +487,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   });
 
   panelBox(s, { x: 0.6, y: 5.55, w: 12.1, h: 1.15 });
-  s.addText("ทุกโมเดลใกล้เคียง baseline ที่ทายกลุ่มมากสุดอย่างเดียว (51.3%) — ไม่มีโมเดลไหนชนะชัดเจน ช่วงความเชื่อมั่น 95% ของ ROC-AUC ของ XGBoost คือ 0.488–0.520 ซึ่งครอบคลุม 0.5 จึงยังแยกจากการเดาสุ่มไม่ได้", {
+  s.addText("ทุกโมเดลใกล้เคียง baseline ที่ทายกลุ่มมากสุดอย่างเดียว (51.3%) — ไม่มีโมเดลไหนชนะชัดเจน ช่วงความเชื่อมั่น 95% ของ ROC-AUC ของ XGBoost คือ 0.485–0.516 ครอบคลุม 0.5 จึงยังไม่พบว่าดีกว่าการเดาสุ่ม (แต่ไม่ได้พิสูจน์ว่าเท่ากับ 0.5 พอดี)", {
     x: 0.95, y: 5.55, w: 11.4, h: 1.15, fontFace: FONT, fontSize: 14, color: C.white, isTextBox: true, margin: 0, valign: "middle",
   });
 }
@@ -507,7 +507,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   s.addChart(
     pres.ChartType.bar,
     [
-      { name: "ความแม่นยำ XGBoost", labels: cats, values: [0.5062, 0.5146, 0.5308] },
+      { name: "ความแม่นยำ XGBoost", labels: cats, values: [0.5060, 0.5242, 0.5230] },
       { name: "Baseline (ทายกลุ่มมากสุด)", labels: cats, values: [0.5127, 0.5306, 0.5270] },
     ],
     {
@@ -528,7 +528,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
 
   panelBox(s, { x: 8.5, y: 1.95, w: 4.2, h: 4.3, fill: C.panel2 });
   s.addText("ROC-AUC ตามระยะเวลา (ชุด test)", { x: 8.8, y: 2.15, w: 3.7, h: 0.3, fontFace: FONT, fontSize: 11, color: C.muted, charSpacing: 1, isTextBox: true, margin: 0 });
-  const aucRows = [["1 วัน", "0.505", "ช่วงความเชื่อมั่น 95%: 0.488 – 0.521"], ["5 วัน", "0.506", "ช่วงความเชื่อมั่น 95%: 0.484 – 0.533"], ["10 วัน", "0.519", "ช่วงความเชื่อมั่น 95%: 0.489 – 0.550"]];
+  const aucRows = [["1 วัน", "0.5005", "ช่วงความเชื่อมั่น 95%: 0.485 – 0.516"], ["5 วัน", "0.5076", "ช่วงความเชื่อมั่น 95%: 0.485 – 0.534"], ["10 วัน", "0.5225", "ช่วงความเชื่อมั่น 95%: 0.492 – 0.556"]];
   let ary = 2.55;
   aucRows.forEach((r) => {
     s.addText(r[0], { x: 8.8, y: ary, w: 1.8, h: 0.4, fontFace: FONT, fontSize: 14, color: C.white, valign: "middle", isTextBox: true, margin: 0 });
@@ -537,7 +537,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
     ary += 0.82;
   });
   s.addText("สุ่มล้วนๆ = 0.500", { x: 8.8, y: 5.0, w: 3.6, h: 0.3, fontFace: FONT, fontSize: 10, italic: true, color: C.mutedDark, isTextBox: true, margin: 0 });
-  s.addText("ทุกระยะเวลา ช่วงความเชื่อมั่นครอบคลุม 0.5 — ไม่พบสัญญาณที่แยกจากการสุ่มได้ ตรงกับทฤษฎีตลาดมีประสิทธิภาพ (Market Efficiency)", {
+  s.addText("ทุกระยะเวลา ช่วงความเชื่อมั่นครอบคลุม 0.5 — ยังไม่พบสัญญาณที่ดีกว่าการสุ่ม สอดคล้องกับทฤษฎีตลาดมีประสิทธิภาพ (แต่ไม่ได้พิสูจน์)", {
     x: 8.8, y: 5.3, w: 3.7, h: 0.9, fontFace: FONT, fontSize: 12, color: C.white, isTextBox: true, margin: 0, valign: "top",
   });
 }
@@ -550,8 +550,8 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   kicker(s, "ผลลัพธ์และการประเมิน");
   title(s, "โมเดลให้ความสำคัญกับอะไรบ้าง?");
 
-  const featCats = ["ret_21d", "dist_sma50", "rsi14", "macd_hist", "volatility_20d", "dist_sma20", "ret_5d", "ret_10d", "ret_1d", "vol_ratio"];
-  const featVals = [0.0957, 0.0979, 0.0981, 0.0992, 0.1000, 0.1009, 0.1015, 0.1021, 0.1022, 0.1023];
+  const featCats = ["volatility_20d", "macd_hist", "dist_sma50", "ret_21d", "rsi14", "dist_sma20", "ret_10d", "ret_5d", "vol_ratio", "ret_1d"];
+  const featVals = [0.0943, 0.0948, 0.0950, 0.0965, 0.0974, 0.0981, 0.1023, 0.1034, 0.1069, 0.1112];
   const featColors = featCats.map(() => C.mutedDark);
 
   s.addChart(pres.ChartType.bar, [{ name: "Importance", labels: featCats, values: featVals }], {
@@ -570,7 +570,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   panelBox(s, { x: 8.5, y: 1.85, w: 4.2, h: 5.0, fill: C.panel2 });
   s.addImage({ path: icon("target", "lime"), x: 8.8, y: 2.15, w: 0.4, h: 0.4 });
   s.addText("ข้อค้นพบสำคัญ", { x: 9.35, y: 2.2, w: 3, h: 0.35, fontFace: FONT, fontSize: 15, bold: true, color: C.lime, isTextBox: true, margin: 0 });
-  s.addText("ความสำคัญของทุกฟีเจอร์ใกล้เคียงกันหมด (0.096–0.102) ไม่มีฟีเจอร์ไหนโดดเด่น\n\nสอดคล้องกับผลก่อนหน้า: ถ้ามีสัญญาณจริง เราควรเห็นฟีเจอร์ 1–2 ตัวสูงกว่าตัวอื่นชัดเจน แต่นี่ต้นไม้กำลังแบ่งตาม noise", {
+  s.addText("ความสำคัญของทุกฟีเจอร์อยู่ในช่วงแคบ (0.094–0.111) ไม่มีฟีเจอร์ไหนโดดเด่นชัดเจน\n\nค่านี้แค่อธิบายว่าโมเดลใช้อะไร ไม่ได้พิสูจน์ว่าฟีเจอร์ใดทำให้ราคาขยับ — หลักฐานหลักมาจากการทดสอบบนชุด test", {
     x: 8.8, y: 2.75, w: 3.6, h: 3.8, fontFace: FONT, fontSize: 13, color: C.white, isTextBox: true, margin: 0, valign: "top", lineSpacing: 20,
   });
 }
@@ -589,12 +589,12 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
     x: 1.15, y: 1.4, w: 6.0, h: 0.45, fontFace: FONT, fontSize: 12, bold: true, color: C.coral, valign: "middle", isTextBox: true, margin: 0,
   });
 
-  s.addText("กติกา: ถือหุ้นวันถัดไปเมื่อ P(ขึ้น) > 0.55 นอกนั้นถือเงินสด น้ำหนักเท่ากันทั้ง 20 หุ้น เฉพาะช่วง test ไม่รวมค่าธรรมเนียม", {
+  s.addText("กติกา: ใช้โมเดล 1 วัน ถือหุ้นวันถัดไปเมื่อ P(ขึ้น) > 0.55 นอกนั้นถือเงินสด น้ำหนักเท่ากันทั้ง 20 หุ้น ช่วง test ไม่รวมค่าธรรมเนียม และใช้ราคาปิดวันเดียวกัน (ผลจริงน่าจะแย่กว่านี้)", {
     x: 0.6, y: 2.05, w: 12.0, h: 0.5, fontFace: FONT, fontSize: 13, color: C.muted, isTextBox: true, margin: 0,
   });
 
   panelBox(s, { x: 0.6, y: 2.75, w: 5.85, h: 2.1 });
-  statCallout(s, { x: 1.0, y: 3.05, w: 5, value: "1.13x", label: "กลยุทธ์ตามสัญญาณโมเดล", color: C.white, valueSize: 44 });
+  statCallout(s, { x: 1.0, y: 3.05, w: 5, value: "1.08x", label: "กลยุทธ์ตามสัญญาณโมเดล", color: C.white, valueSize: 44 });
 
   panelBox(s, { x: 6.85, y: 2.75, w: 5.85, h: 2.1, fill: C.panel2 });
   statCallout(s, { x: 7.25, y: 3.05, w: 5, value: "1.28x", label: "ซื้อแล้วถือ (น้ำหนักเท่ากัน)", color: C.lime, valueSize: 44 });
@@ -604,7 +604,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   panelBox(s, { x: 0.6, y: 5.15, w: 12.1, h: 1.55 });
   s.addImage({ path: icon("target", "lime"), x: 0.9, y: 5.4, w: 0.35, h: 0.35 });
   s.addText("ทำไมซื้อแล้วถือถึงชนะ", { x: 1.4, y: 5.4, w: 5, h: 0.35, fontFace: FONT, fontSize: 14, bold: true, color: C.white, isTextBox: true, margin: 0 });
-  s.addText("โมเดลถือหุ้นเพียง ~31% ของเวลา ขณะที่ช่วง test ตลาดโดยรวมขึ้น การอยู่ในเงินสดทำให้พลาดวันขึ้นไปหลายวัน และโมเดลไม่มีความได้เปรียบทางสถิติมาชดเชย — ความได้เปรียบทางสถิติเล็กน้อยไม่เท่ากับกลยุทธ์ที่ทำกำไรได้จริง", {
+  s.addText("โมเดลถือหุ้นเพียง ~20% ของเวลา ขณะที่ช่วง test ตลาดโดยรวมขึ้น การอยู่ในเงินสดทำให้พลาดวันขึ้นไปหลายวัน และโมเดลไม่มีความได้เปรียบทางสถิติมาชดเชย — ความได้เปรียบทางสถิติเล็กน้อยไม่เท่ากับกลยุทธ์ที่ทำกำไรได้จริง", {
     x: 0.9, y: 5.8, w: 11.5, h: 0.85, fontFace: FONT, fontSize: 13, color: C.muted, isTextBox: true, margin: 0, valign: "top",
   });
 }
@@ -642,9 +642,9 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   panelBox(s, { x: 0.6, y: 1.85, w: 5.85, h: 4.85 });
   s.addText("ข้อค้นพบสำคัญ", { x: 0.95, y: 2.1, w: 5, h: 0.3, fontFace: FONT, fontSize: 12, bold: true, color: C.lime, charSpacing: 1, isTextBox: true, margin: 0 });
   const insights = [
-    "ไปป์ไลน์ไม่รั่วไหลข้อมูล: label แยกจากฟีเจอร์ มี embargo และเลือก horizon/hyperparameter จากชุด train เท่านั้น",
-    "ไม่มีโมเดลไหน (รวม XGBoost) แยกจากการเดาสุ่มได้ — ช่วงความเชื่อมั่นของ AUC ครอบคลุม 0.5 ทุก horizon",
-    "ความสำคัญของฟีเจอร์เกือบเท่ากันหมด ไม่มีสัญญาณเด่น — สอดคล้องกับทฤษฎีตลาดมีประสิทธิภาพ",
+    "ไปป์ไลน์ไม่รั่วไหลข้อมูล: label แยกจากฟีเจอร์ มี purge และเลือก horizon/hyperparameter จากชุด train เท่านั้น",
+    "ยังไม่พบว่าโมเดลไหน (รวม XGBoost) ดีกว่าการเดาสุ่ม — ช่วงความเชื่อมั่นของ AUC ครอบคลุม 0.5 ทุก horizon",
+    "ความสำคัญของฟีเจอร์อยู่ในช่วงแคบ ไม่มีตัวเด่น — สอดคล้องกับ (แต่ไม่ได้พิสูจน์) ทฤษฎีตลาดมีประสิทธิภาพ",
     "ผลลัพธ์ “ไม่พบ” ก็เป็นข้อค้นพบ — คุณค่าของงานนี้คือวิธีประเมินที่เชื่อถือได้",
   ];
   let iny = 2.55;
