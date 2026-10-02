@@ -21,15 +21,15 @@ jupyter notebook stock_direction_model.ipynb
 1. Data collection (5y daily OHLCV, 20 tickers, `yfinance`)
 2. Dataset understanding / EDA
 3. Feature engineering — technical indicators (RSI, MACD, SMA distance, volume ratio, volatility)
-4. Labeling — next-period direction, explained + verified leakage-free
-5. Time-based (not random) train/test split — the key anti-leakage design choice
-6. Model training — Logistic Regression & Random Forest baselines vs. tuned XGBoost
-   (`TimeSeriesSplit` cross-validation inside the training set only)
-7. Evaluation — accuracy / precision / recall / F1 / ROC-AUC, confusion matrix, ROC curve
-8. Multi-horizon comparison (1-day / 5-day / 10-day) — the main insight
-9. Feature importance + SHAP
-10. Illustrative backtest (clearly labeled as academic, not investment advice)
-11. Limitations & conclusion
+4. Labeling — next-period direction; unlabeled tail rows dropped (not silently labeled "down")
+5. Chronological (not random) train/test split **with an embargo** — the key anti-leakage design choice
+6. Horizon + hyperparameters chosen with chronological `TimeSeriesSplit` CV on the training set only
+7. Model training — Logistic Regression & Random Forest baselines vs. XGBoost
+8. Evaluation — accuracy / precision / recall / F1 / ROC-AUC with a block-bootstrap 95% CI
+9. Multi-horizon comparison (1 / 5 / 10 days), reported with confidence intervals
+10. Feature importance + SHAP
+11. Illustrative backtest (clearly labeled as academic, not investment advice)
+12. Limitations & conclusion
 
 ## Slides
 
@@ -50,11 +50,16 @@ on slides 1–2 before presenting.
 
 ## Headline result (for slides)
 
-Honest finding, not a high-accuracy claim: next-day direction is close to unpredictable from
-technical indicators alone (ROC-AUC ≈ 0.50, consistent with market efficiency); a small, real
-edge appears at a 10-day horizon (ROC-AUC ≈ 0.53) across Logistic Regression / Random Forest /
-XGBoost baselines, with `macd_hist`, `dist_sma50`, and short-term returns as the most consistently
-important features. See Section 13 in the notebook for full limitations.
+An honest negative result, not a high-accuracy claim: with free daily prices and standard
+technical indicators, **no model (XGBoost, Random Forest, Logistic Regression) is statistically
+distinguishable from a coin flip** at any horizon tested — every ROC-AUC 95% confidence interval
+contains 0.5 — feature importances are nearly flat, and the toy strategy trails buy-and-hold. That
+agrees with weak-form market efficiency; the project's value is a leakage-free pipeline whose
+evaluation can be trusted. See Section 14 in the notebook for limitations.
+
+The numbers on the slides are a snapshot (data through 2026-10-01). Re-running the notebook later
+extends the data and shifts them slightly; the conclusion should hold as long as the confidence
+intervals still contain 0.5 — check this before presenting and update slides 9–12 if it changes.
 
 ## Regenerating the notebook
 
