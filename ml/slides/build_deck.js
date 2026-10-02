@@ -25,6 +25,16 @@ const PAGE_H = 7.5;
 const FONT = "Leelawadee UI";
 const FONT_HEAD = "Leelawadee UI";
 
+// Team details live in team.local.json, which is gitignored so students' names and IDs never reach
+// the public repo. Without that file the deck keeps its blank placeholders.
+// Shape: { "groupName": "...", "groupNo": "...", "members": [{ "name": "...", "id": "..." }] }
+let TEAM = { groupName: "[ชื่อทีมที่นี่]", groupNo: "___", members: [] };
+try { TEAM = Object.assign(TEAM, require("./team.local.json")); } catch (e) { /* placeholders */ }
+const HAS_NAME = !TEAM.groupName.startsWith("[");
+const HAS_NO = !!TEAM.groupNo && TEAM.groupNo !== "___";
+const TEAM_BADGE = !HAS_NAME ? "กลุ่ม ___  ·  [ชื่อทีมที่นี่]"
+  : HAS_NO ? `กลุ่ม ${TEAM.groupNo}  ·  ${TEAM.groupName}` : `กลุ่ม ${TEAM.groupName}`;
+
 let pageNum = 0;
 function newSlide() {
   pageNum += 1;
@@ -116,7 +126,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
     x: 0.9, y: 5.35, w: 4.6, h: 0.5, rectRadius: 0.08,
     fill: { color: C.panel }, line: { type: "none" },
   });
-  s.addText("กลุ่ม ___  ·  [ชื่อทีมที่นี่]", {
+  s.addText(TEAM_BADGE, {
     x: 1.05, y: 5.35, w: 4.3, h: 0.5, fontFace: FONT, fontSize: 13, color: C.white,
     isTextBox: true, margin: 0, valign: "middle",
   });
@@ -153,19 +163,21 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
   title(s, "สมาชิกในกลุ่ม");
 
   panelBox(s, { x: 0.6, y: 1.85, w: 12.1, h: 0.9 });
-  s.addText("กลุ่มที่", { x: 0.9, y: 1.85, w: 2, h: 0.9, fontFace: FONT, fontSize: 12, color: C.muted, isTextBox: true, margin: 0, valign: "middle" });
-  s.addText("___", { x: 0.9, y: 2.15, w: 2, h: 0.5, fontFace: FONT_HEAD, fontSize: 20, bold: true, color: C.lime, isTextBox: true, margin: 0 });
-  s.addText("ชื่อกลุ่ม", { x: 3.3, y: 1.85, w: 4, h: 0.4, fontFace: FONT, fontSize: 12, color: C.muted, isTextBox: true, margin: 0 });
-  s.addText("[ชื่อทีมที่นี่]", { x: 3.3, y: 2.2, w: 6, h: 0.5, fontFace: FONT_HEAD, fontSize: 20, bold: true, color: C.white, isTextBox: true, margin: 0 });
+  // Without a group number, drop that field instead of leaving a blank on the slide.
+  const nameX = HAS_NAME && !HAS_NO ? 0.9 : 3.3;
+  if (!HAS_NAME || HAS_NO) {
+    s.addText("กลุ่มที่", { x: 0.9, y: 1.85, w: 2, h: 0.9, fontFace: FONT, fontSize: 12, color: C.muted, isTextBox: true, margin: 0, valign: "middle" });
+    s.addText(TEAM.groupNo, { x: 0.9, y: 2.15, w: 2, h: 0.5, fontFace: FONT_HEAD, fontSize: 20, bold: true, color: C.lime, isTextBox: true, margin: 0 });
+  }
+  s.addText("ชื่อกลุ่ม", { x: nameX, y: 1.85, w: 4, h: 0.4, fontFace: FONT, fontSize: 12, color: C.muted, isTextBox: true, margin: 0 });
+  s.addText(TEAM.groupName, { x: nameX, y: 2.2, w: 8, h: 0.5, fontFace: FONT_HEAD, fontSize: 20, bold: true, color: C.white, isTextBox: true, margin: 0 });
 
-  const rows = [
-    ["#", "ชื่อนักศึกษา", "รหัสนักศึกษา"],
-    ["1", "_______________________", "_______________"],
-    ["2", "_______________________", "_______________"],
-    ["3", "_______________________", "_______________"],
-    ["4", "_______________________", "_______________"],
-    ["5", "_______________________", "_______________"],
-  ];
+  const blank = (i) => [String(i), "_______________________", "_______________"];
+  const memberRows = TEAM.members.length
+    ? TEAM.members.map((m, i) => [String(i + 1), m.name, m.id])
+    : [1, 2, 3, 4, 5].map(blank);
+  const rows = [["#", "ชื่อนักศึกษา", "รหัสนักศึกษา"], ...memberRows];
+  const ROW_H = rows.length > 6 ? 0.5 : 0.6;
   const tableRows = rows.map((r, i) => r.map((cell) => ({
     text: cell,
     options: {
@@ -175,11 +187,11 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
     },
   })));
   s.addTable(tableRows, {
-    x: 0.6, y: 3.0, w: 12.1, h: 3.6,
+    x: 0.6, y: 3.0, w: 12.1, h: ROW_H * rows.length,
     colW: [1.2, 6.9, 4.0],
     border: { type: "none" },
     autoPage: false,
-    rowH: 0.6,
+    rowH: ROW_H,
   });
 }
 
@@ -694,7 +706,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
     x: 0, y: 4.0, w: PAGE_W, h: 0.5, fontFace: FONT, fontSize: 18, color: C.lime,
     align: "center", isTextBox: true, margin: 0,
   });
-  s.addText("Stockscope AI  ·  CP020003 ปัญญาประดิษฐ์  ·  กลุ่ม ___", {
+  s.addText(`Stockscope AI  ·  CP020003 ปัญญาประดิษฐ์  ·  กลุ่ม ${HAS_NAME ? TEAM.groupName : "___"}`, {
     x: 0, y: PAGE_H - 0.9, w: PAGE_W, h: 0.4, fontFace: FONT, fontSize: 12, color: C.mutedDark,
     align: "center", isTextBox: true, margin: 0,
   });

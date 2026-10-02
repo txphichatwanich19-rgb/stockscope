@@ -12,3 +12,5 @@ Thumbs.db
 ml/slides/node_modules/
 ml/slides/icons/
 
+ml/private/
+ml/slides/team.local.json
