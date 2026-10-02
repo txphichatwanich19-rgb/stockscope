@@ -706,7 +706,7 @@ function panelBox(slide, { x, y, w, h, fill = C.panel }) {
     x: 0, y: 4.0, w: PAGE_W, h: 0.5, fontFace: FONT, fontSize: 18, color: C.lime,
     align: "center", isTextBox: true, margin: 0,
   });
-  s.addText(`Stockscope AI  ·  CP020003 ปัญญาประดิษฐ์  ·  กลุ่ม ${HAS_NAME ? TEAM.groupName : "___"}`, {
+  s.addText(`Stockscope AI  ·  CP020003 ปัญญาประดิษฐ์  ·  ${HAS_NAME ? TEAM_BADGE : "กลุ่ม ___"}`, {
     x: 0, y: PAGE_H - 0.9, w: PAGE_W, h: 0.4, fontFace: FONT, fontSize: 12, color: C.mutedDark,
     align: "center", isTextBox: true, margin: 0,
   });
