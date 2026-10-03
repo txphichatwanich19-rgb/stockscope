@@ -1,8 +1,12 @@
 """แดชบอร์ดหุ้นเรียลไทม์ — วิเคราะห์เทคนิค + ข่าว (แปลไทย) + ไอเดียลงทุน"""
 from __future__ import annotations
 
+import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 import numpy as np
 import pandas as pd
@@ -1751,12 +1755,44 @@ def translate_th(text: str) -> str:
         return ""
 
 
-@st.cache_data(ttl=300, show_spinner=False)
-def load_news(ticker: str) -> list[dict]:
+def _news_from_search(ticker: str) -> list[dict]:
     try:
-        raw = yf.Ticker(ticker).news or []
+        return list(yf.Search(ticker, news_count=15, max_results=1).news or [])
     except Exception:
         return []
+
+
+def _news_from_rss(ticker: str) -> list[dict]:
+    """Yahoo's per-ticker RSS feed, mapped to the flat shape load_news already parses."""
+    url = f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={quote(ticker)}&region=US&lang=en-US"
+    try:
+        with urlopen(Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=10) as resp:
+            root = ET.fromstring(resp.read())
+    except Exception:
+        return []
+    out = []
+    for it in root.findall("./channel/item"):
+        pub = it.findtext("pubDate")
+        try:
+            ts = parsedate_to_datetime(pub).timestamp() if pub else None
+        except Exception:
+            ts = None
+        out.append({
+            "title": it.findtext("title"), "link": it.findtext("link"),
+            "summary": it.findtext("description") or "", "publisher": "Yahoo Finance",
+            "providerPublishTime": ts,
+        })
+    return out
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def load_news(ticker: str) -> list[dict]:
+    # Yahoo retired the endpoint behind yf.Ticker(t).news (it answers 404 and yfinance hides that by
+    # returning an empty list), so use the search API and top up from the RSS feed when coverage is thin.
+    raw = _news_from_search(ticker)
+    if len(raw) < 5:  # e.g. Thai stocks, where Yahoo has few articles
+        seen = {(n.get("title") or "").strip().lower() for n in raw}
+        raw += [n for n in _news_from_rss(ticker) if (n.get("title") or "").strip().lower() not in seen]
     items = []
     for n in raw:
         # yfinance recent versions nest under "content"
@@ -1788,6 +1824,7 @@ def load_news(ticker: str) -> list[dict]:
         items.append(
             {"title": title, "publisher": publisher, "link": link, "when": when, "summary": summary}
         )
+    items.sort(key=lambda i: i["when"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
     return items
 
 
@@ -3864,7 +3901,7 @@ with tab_stats:
 with tab_news:
     st.caption("ข่าวจาก Yahoo Finance (รวมข่าวบริษัท, ข่าววิเคราะห์, และข่าวตลาดที่เกี่ยวข้อง)")
     if not news:
-        st.info("ไม่พบข่าวล่าสุดสำหรับหุ้นตัวนี้")
+        st.info("ไม่พบข่าวล่าสุดสำหรับหุ้นตัวนี้" + (" (Yahoo Finance มีข่าวหุ้นไทยน้อยมาก)" if ticker.endswith(".BK") else ""))
 
     news_list = news[:25]
     # Sentiment (from English original — VADER works on English)
@@ -3955,15 +3992,17 @@ with tab_news:
         sent_label, sent_cls = sentiment_label(n.get("sentiment", 0))
         sent_chip = f'<span class="mini-chip {sent_cls}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">{sent_label}</span>'
 
+        # One unbroken string: an empty orig_line/summary_html used to leave a blank line in the middle of
+        # the HTML, and Markdown then rendered the indented lines after it as a code block.
         st.markdown(
-            f"""
-            <div class="news-card">
-                <div class="title">{title_html}</div>
-                {orig_line}
-                <div class="meta">📰 {_html.escape(pub)} · 🕐 {when_str} · {sent_chip}</div>
-                {summary_html}
-            </div>
-            """,
+            "".join([
+                '<div class="news-card">',
+                f'<div class="title">{title_html}</div>',
+                orig_line,
+                f'<div class="meta">📰 {_html.escape(pub)} · 🕐 {when_str} · {sent_chip}</div>',
+                summary_html,
+                "</div>",
+            ]),
             unsafe_allow_html=True,
         )
 
