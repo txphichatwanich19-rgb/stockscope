@@ -1741,18 +1741,43 @@ def _rec_thai(key: str | None, mean: float | None) -> str:
     return "—"
 
 
+# st.cache_data does not cache exceptions, so a failed (e.g. rate-limited) call is retried next time
+# instead of being remembered as "" for an hour.
 @st.cache_data(ttl=3600, show_spinner=False)
+def _translate_th_cached(text: str) -> str:
+    # Google Translate รองรับ ~5000 ตัวอักษรต่อคำขอ
+    chunks = [text[i : i + 4500] for i in range(0, len(text), 4500)]
+    tr = GoogleTranslator(source="auto", target="th")
+    return " ".join(tr.translate(c) for c in chunks if c.strip())
+
+
 def translate_th(text: str) -> str:
     text = (text or "").strip()
     if not text:
         return ""
     try:
-        # Google Translate รองรับ ~5000 ตัวอักษรต่อคำขอ
-        chunks = [text[i : i + 4500] for i in range(0, len(text), 4500)]
-        tr = GoogleTranslator(source="auto", target="th")
-        return " ".join(tr.translate(c) for c in chunks if c.strip())
+        return _translate_th_cached(text)
     except Exception:
         return ""
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _translate_many_cached(texts: tuple[str, ...]) -> list[str]:
+    out = GoogleTranslator(source="auto", target="th").translate("\n".join(texts)).split("\n")
+    if len(out) != len(texts):
+        raise ValueError("translation changed the number of lines")
+    return out
+
+
+def translate_many_th(texts: list[str]) -> list[str]:
+    """Translate headlines in ONE request (Google's free endpoint rate-limits bursts of single calls)."""
+    clean = [(t or "").replace("\n", " ").strip() for t in texts]
+    if not any(clean) or sum(len(t) for t in clean) > 4500:
+        return [translate_th(t) for t in clean]
+    try:
+        return _translate_many_cached(tuple(clean))
+    except Exception:
+        return [translate_th(t) for t in clean]
 
 
 def _news_from_search(ticker: str) -> list[dict]:
@@ -3952,8 +3977,8 @@ with tab_news:
 
     if translate_news and news_list:
         with st.spinner("กำลังแปลข่าวเป็นภาษาไทย…"):
-            for n in news_list:
-                n["title_th"] = translate_th(n["title"])
+            for n, th in zip(news_list, translate_many_th([n["title"] for n in news_list])):
+                n["title_th"] = th
                 if n.get("summary"):
                     summary = n["summary"][:600]
                     n["summary_th"] = translate_th(summary)
