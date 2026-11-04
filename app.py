@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 import streamlit as st
 import streamlit.components.v1 as components
 import yfinance as yf
-from deep_translator import GoogleTranslator
+from deep_translator import GoogleTranslator, MyMemoryTranslator
 from plotly.subplots import make_subplots
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
@@ -1746,9 +1746,16 @@ def _rec_thai(key: str | None, mean: float | None) -> str:
 @st.cache_data(ttl=3600, show_spinner=False)
 def _translate_th_cached(text: str) -> str:
     # Google Translate รองรับ ~5000 ตัวอักษรต่อคำขอ
-    chunks = [text[i : i + 4500] for i in range(0, len(text), 4500)]
-    tr = GoogleTranslator(source="auto", target="th")
-    return " ".join(tr.translate(c) for c in chunks if c.strip())
+    try:
+        chunks = [text[i : i + 4500] for i in range(0, len(text), 4500)]
+        tr = GoogleTranslator(source="auto", target="th")
+        return " ".join(tr.translate(c) for c in chunks if c.strip())
+    except Exception:
+        # Google's free endpoint often answers 429 (also from Streamlit Cloud); MyMemory is the backup
+        # (500-char limit per request).
+        chunks = [text[i : i + 450] for i in range(0, len(text), 450)]
+        tr = MyMemoryTranslator(source="en-GB", target="th-TH")
+        return " ".join(tr.translate(c) for c in chunks if c.strip())
 
 
 def translate_th(text: str) -> str:
