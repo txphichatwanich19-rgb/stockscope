@@ -1,6 +1,7 @@
 """แดชบอร์ดหุ้นเรียลไทม์ — วิเคราะห์เทคนิค + ข่าว (แปลไทย) + ไอเดียลงทุน"""
 from __future__ import annotations
 
+import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -1743,19 +1744,33 @@ def _rec_thai(key: str | None, mean: float | None) -> str:
 
 # st.cache_data does not cache exceptions, so a failed (e.g. rate-limited) call is retried next time
 # instead of being remembered as "" for an hour.
+@st.cache_resource
+def _translator_state() -> dict:
+    # Shared across reruns/sessions (module globals are reset on every rerun).
+    return {"google_down_until": 0.0}
+
+
+def _translate_raw(text: str) -> str:
+    state = _translator_state()
+    if time.time() >= state["google_down_until"]:
+        try:
+            # Google Translate รองรับ ~5000 ตัวอักษรต่อคำขอ
+            chunks = [text[i : i + 4500] for i in range(0, len(text), 4500)]
+            tr = GoogleTranslator(source="auto", target="th")
+            return " ".join(tr.translate(c) for c in chunks if c.strip())
+        except Exception:
+            # Google's free endpoint often answers 429 (also from Streamlit Cloud). Skip it for 10 minutes
+            # instead of paying a failed request per headline.
+            state["google_down_until"] = time.time() + 600
+    # Backup: MyMemory (500-char limit per request).
+    chunks = [text[i : i + 450] for i in range(0, len(text), 450)]
+    tr = MyMemoryTranslator(source="en-GB", target="th-TH")
+    return " ".join(tr.translate(c) for c in chunks if c.strip())
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def _translate_th_cached(text: str) -> str:
-    # Google Translate รองรับ ~5000 ตัวอักษรต่อคำขอ
-    try:
-        chunks = [text[i : i + 4500] for i in range(0, len(text), 4500)]
-        tr = GoogleTranslator(source="auto", target="th")
-        return " ".join(tr.translate(c) for c in chunks if c.strip())
-    except Exception:
-        # Google's free endpoint often answers 429 (also from Streamlit Cloud); MyMemory is the backup
-        # (500-char limit per request).
-        chunks = [text[i : i + 450] for i in range(0, len(text), 450)]
-        tr = MyMemoryTranslator(source="en-GB", target="th-TH")
-        return " ".join(tr.translate(c) for c in chunks if c.strip())
+    return _translate_raw(text)
 
 
 def translate_th(text: str) -> str:
@@ -1770,21 +1785,29 @@ def translate_th(text: str) -> str:
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def _translate_many_cached(texts: tuple[str, ...]) -> list[str]:
-    out = GoogleTranslator(source="auto", target="th").translate("\n".join(texts)).split("\n")
+    state = _translator_state()
+    if time.time() < state["google_down_until"]:
+        raise RuntimeError("google translate is backing off")
+    try:
+        out = GoogleTranslator(source="auto", target="th").translate("\n".join(texts)).split("\n")
+    except Exception:
+        state["google_down_until"] = time.time() + 600
+        raise
     if len(out) != len(texts):
         raise ValueError("translation changed the number of lines")
     return out
 
 
 def translate_many_th(texts: list[str]) -> list[str]:
-    """Translate headlines in ONE request (Google's free endpoint rate-limits bursts of single calls)."""
+    """Translate headlines in ONE Google request; if that is unavailable, translate them in parallel."""
     clean = [(t or "").replace("\n", " ").strip() for t in texts]
-    if not any(clean) or sum(len(t) for t in clean) > 4500:
-        return [translate_th(t) for t in clean]
-    try:
-        return _translate_many_cached(tuple(clean))
-    except Exception:
-        return [translate_th(t) for t in clean]
+    if any(clean) and sum(len(t) for t in clean) <= 4500:
+        try:
+            return _translate_many_cached(tuple(clean))
+        except Exception:
+            pass
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        return list(ex.map(translate_th, clean))
 
 
 def _news_from_search(ticker: str) -> list[dict]:
@@ -2112,12 +2135,20 @@ with st.sidebar:
     else:
         initial_val = st.session_state.ticker
         placeholder_txt = "AAPL, TSLA, BTC-USD, ^GSPC …"
+    # The box keeps its own widget state, so after a stock is picked with a button it still showed the
+    # old text, and the check below then reset the ticker to that old text. Push the chosen ticker into
+    # the box before it is created whenever something else changed it.
+    box_key = f"ticker_input_{page}"
+    if page != "🌐 ภาพรวมตลาด":
+        if st.session_state.get("_box_ticker") != st.session_state.ticker:
+            st.session_state[box_key] = st.session_state.ticker
+        st.session_state["_box_ticker"] = st.session_state.ticker
     ticker_input = st.text_input(
         "รหัสหุ้น",
-        value=initial_val,
+        value="",  # the text comes from session state (set above); a non-default value= here triggers a warning
         placeholder=placeholder_txt,
         label_visibility="collapsed",
-        key=f"ticker_input_{page}",
+        key=box_key,
     )
     typed = ticker_input.upper().strip()
     if typed and typed != st.session_state.ticker:
@@ -3993,9 +4024,10 @@ with tab_news:
         with st.spinner("กำลังแปลข่าวเป็นภาษาไทย…"):
             for n, th in zip(news_list, translate_many_th([n["title"] for n in news_list])):
                 n["title_th"] = th
-                if n.get("summary"):
-                    summary = n["summary"][:600]
-                    n["summary_th"] = translate_th(summary)
+            with_summary = [n for n in news_list if n.get("summary")]
+            with ThreadPoolExecutor(max_workers=8) as ex:
+                for n, th in zip(with_summary, ex.map(translate_th, [n["summary"][:600] for n in with_summary])):
+                    n["summary_th"] = th
 
     import html as _html
     for n in news_list:
