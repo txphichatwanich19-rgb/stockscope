@@ -2473,7 +2473,7 @@ if page == "📊 ดูหุ้น":
     if st.button("🔄 อัพเดตข้อมูล", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
-    st.caption("ข้อมูลจาก Yahoo Finance · หน่วง ~1 นาที · แคช 60 วิ")
+    st.caption("ข้อมูลจาก Yahoo Finance · อาจหน่วงตามตลาด · แคช 60 วิ")
 
 # Premium workspace header — creates a clear visual hierarchy above the data.
 page_context = {
@@ -3429,6 +3429,13 @@ with hero_right:
         unsafe_allow_html=True,
     )
 
+_last_bar = str(df.index[-1])[:16]
+st.caption(
+    f"แหล่งข้อมูล: Yahoo Finance (ผ่านไลบรารี yfinance) · แท่งล่าสุด {_last_bar} · สกุลเงิน {currency} · "
+    "ข้อมูลอาจหน่วงตามเงื่อนไขของ Yahoo (บางตลาดหน่วงได้ถึง 15 นาที) และถูกแคชไว้ 60 วินาที · "
+    "ราคาบาทคำนวณจากอัตรา USD/THB ล่าสุด เป็นค่าประมาณเท่านั้น"
+)
+
 # Stat tiles
 def tile(label: str, value: str) -> str:
     return f'<div class="tile"><div class="label">{label}</div><div class="value">{value}</div></div>'
@@ -4138,6 +4145,30 @@ with tab_signal:
         for r in reasons
     )
     st.markdown(reasons_html, unsafe_allow_html=True)
+
+    with st.expander("ℹ️ สัญญาณและโซนซื้อ/ขายคำนวณอย่างไร"):
+        st.markdown(
+            """
+**คะแนนสัญญาณ** รวมจาก 4 กฎ (ใช้ราคาปิดของช่วงเวลาที่เลือกอยู่)
+
+| กฎ | เงื่อนไข | คะแนน |
+|---|---|---|
+| แนวโน้มระยะยาว | ราคา > SMA50 > SMA200 / ราคา < SMA50 < SMA200 | +2 / −2 |
+| แนวโน้มระยะสั้น | ราคาเหนือ SMA20 / ต่ำกว่า SMA20 | +1 / −1 |
+| RSI (14) | ต่ำกว่า 30 (oversold) / สูงกว่า 70 (overbought) | +2 / −2 |
+| MACD | เพิ่งตัดขึ้น / เพิ่งตัดลงเทียบเส้น Signal | +2 / −2 |
+| MACD | อยู่เหนือ / ใต้ Signal (ไม่ได้เพิ่งตัด) | +1 / −1 |
+
+รวมคะแนน ≥ 3 = โน้มเอียงฝั่งซื้อ · ≤ −3 = โน้มเอียงฝั่งขาย · อื่นๆ = ไม่ชัดเจน
+
+**โซนซื้อ/ขาย** หาจากจุดสูงสุด/ต่ำสุดย่อยในกราฟ (pivot) แล้วรวมจุดที่ห่างกันไม่ถึง 1.5% เป็นระดับเดียว
+แนวรับ = ระดับใต้ราคาปัจจุบัน แนวต้าน = ระดับเหนือราคาปัจจุบัน จุดตัดขาดทุนตั้งไว้ที่ 2% ใต้แนวรับ 2
+(หรือ 4% ใต้แนวรับ 1 ถ้ามีแนวรับเดียว) ผลจึงเปลี่ยนตามช่วงเวลาและ interval ที่เลือก
+
+**ข้อจำกัด** เป็นกฎมาตรฐานของการวิเคราะห์เทคนิค ยังไม่ได้ทดสอบย้อนหลังว่าให้ผลตอบแทนจริง
+และไม่รวมข่าว งบการเงิน หรือภาวะตลาดโดยรวม
+"""
+        )
 
     st.write("")
     st.warning(
